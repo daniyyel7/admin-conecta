@@ -1,15 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
+import { proveerApiFalsa } from '../../../../testing/api-falsa';
 import { ColeccionesStore } from './colecciones-store';
 
-describe('ColeccionesStore', () => {
+describe('ColeccionesStore (contra la API falsa)', () => {
   let store: ColeccionesStore;
   const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   beforeEach(async () => {
+    TestBed.configureTestingModule({ providers: proveerApiFalsa() });
     store = TestBed.inject(ColeccionesStore);
     store.load();
-    await esperar(450);
+    await esperar(50);
   });
 
   it('carga las colecciones con la forma del JSON de la API', () => {
@@ -19,7 +21,7 @@ describe('ColeccionesStore', () => {
     expect(libros.resources[0]).toMatchObject({ type: 'pdf', apartment: 'Escuela Sabática', status: 'En curso' });
   });
 
-  it('crea una colección vacía con estado y link asignados', async () => {
+  it('crea una colección vacía con estado y link asignados por la API', async () => {
     const col = await firstValueFrom(
       store.createCollection({
         title: 'Nueva',
@@ -60,13 +62,16 @@ describe('ColeccionesStore', () => {
     expect(store.getById('4')!.resources.every((r) => r.apartment === 'Ministerio Personal' && r.category === 'Estudios')).toBe(true);
   });
 
-  it('simula la subida con progreso y devuelve una URL', async () => {
+  it('los errores de la API llegan con su mensaje', async () => {
+    await expect(firstValueFrom(store.removeResource('1', '999'))).rejects.toThrow('El recurso no existe.');
+  });
+
+  it('sube el archivo a la carpeta de la colección con progreso y devuelve la URL', async () => {
     const eventos: number[] = [];
     let url: string | undefined;
     const file = new File(['x'], 'a.pdf', { type: 'application/pdf' });
-    URL.createObjectURL ??= () => 'blob:test';
     await new Promise<void>((resolve) =>
-      store.upload(file).subscribe({
+      store.upload(file, 'pdf', '1').subscribe({
         next: (p) => {
           eventos.push(p.progress);
           url = p.url ?? url;
@@ -76,6 +81,6 @@ describe('ColeccionesStore', () => {
     );
     expect(eventos.at(-1)).toBe(100);
     expect(eventos.length).toBeGreaterThan(2);
-    expect(url).toBeTruthy();
+    expect(url).toBe('https://app.umch.org.mx/media/publico/pdf/col-1/a.pdf');
   });
 });

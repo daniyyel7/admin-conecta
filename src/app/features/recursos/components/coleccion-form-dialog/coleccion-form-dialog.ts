@@ -1,24 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { DEPARTAMENTOS } from '../../../../core/catalogos/departamentos';
+import { CatalogosStore } from '../../../../core/catalogos/catalogos-store';
+import { departamentos } from '../../../../core/catalogos/departamentos';
 import { normalizar } from '../../../../shared/format';
 import { Modal } from '../../../../shared/modal/modal';
 import { Collection, CollectionInput } from '../../models/recurso';
 import { ColeccionesStore } from '../../services/colecciones-store';
-
-/** Categorías disponibles para una colección. */
-export const CATEGORIAS = [
-  'Libros',
-  'Devocionales',
-  'Sermones',
-  'Estudios bíblicos',
-  'Capacitación',
-  'Programas',
-  'Música',
-  'Niños',
-  'Eventos',
-];
 
 /** Crear o editar una colección. Si recibe `coleccion`, edita. */
 @Component({
@@ -33,6 +21,9 @@ export const CATEGORIAS = [
       (closed)="closed.emit()"
     >
       <form id="coleccion-form" [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-5">
+        @if (saveError(); as e) {
+          <p role="alert" class="rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">{{ e }}</p>
+        }
         <div>
           <label for="col-title" class="form-label">Nombre <span class="text-danger">*</span></label>
           <input id="col-title" formControlName="title" maxlength="80" class="field" placeholder="Ej. Libros UMCH 2026" [attr.aria-invalid]="showError('title')" aria-describedby="col-title-error" />
@@ -54,7 +45,7 @@ export const CATEGORIAS = [
             <label for="col-apartment" class="form-label">Departamento <span class="text-danger">*</span></label>
             <select id="col-apartment" formControlName="apartment" class="field" [attr.aria-invalid]="showError('apartment')" aria-describedby="col-apartment-error">
               <option value="" disabled>Selecciona…</option>
-              @for (d of departamentos; track d.id) {
+              @for (d of departamentos(); track d.id) {
                 <option [value]="d.nombre">{{ d.nombre }}</option>
               }
             </select>
@@ -117,14 +108,17 @@ export class ColeccionFormDialog implements OnInit {
   readonly closed = output<void>();
   readonly saved = output<Collection>();
 
-  protected readonly departamentos = DEPARTAMENTOS;
+  private readonly catalogos = inject(CatalogosStore);
+  protected readonly departamentos = departamentos;
   /** Si la colección que se edita tiene una categoría que no está en la lista, se conserva como opción. */
   protected readonly categorias = computed(() => {
+    const lista = this.catalogos.categorias().map((c) => c.nombre);
     const actual = this.coleccion()?.category;
-    return actual && !CATEGORIAS.includes(actual) ? [...CATEGORIAS, actual] : CATEGORIAS;
+    return actual && !lista.includes(actual) ? [...lista, actual] : lista;
   });
   protected readonly saving = signal(false);
   protected readonly submitted = signal(false);
+  protected readonly saveError = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(80)]],
@@ -142,7 +136,7 @@ export class ColeccionFormDialog implements OnInit {
       this.form.reset({
         title: c.title,
         description: c.description,
-        apartment: this.departamentos.find((d) => normalizar(d.nombre) === normalizar(c.apartment))?.nombre ?? c.apartment,
+        apartment: this.departamentos().find((d) => normalizar(d.nombre) === normalizar(c.apartment))?.nombre ?? c.apartment,
         category: c.category,
         date: c.date,
         location: c.location,
@@ -179,7 +173,12 @@ export class ColeccionFormDialog implements OnInit {
     const actual = this.coleccion();
     const request = actual ? this.store.updateCollection(actual.id, data) : this.store.createCollection(data);
     this.saving.set(true);
-    request.pipe(finalize(() => this.saving.set(false))).subscribe((col) => this.saved.emit(col));
+    this.saveError.set(null);
+    request.pipe(finalize(() => this.saving.set(false))).subscribe({
+      next: (col) => this.saved.emit(col),
+      error: (err: unknown) =>
+        this.saveError.set(err instanceof Error ? err.message : 'No se pudo guardar la colección.'),
+    });
   }
 }
 

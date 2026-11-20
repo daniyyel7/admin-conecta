@@ -6,6 +6,9 @@
   (closed)="closed.emit()"
 >
   <form id="recurso-form" [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-6">
+    @if (saveError(); as e) {
+      <p role="alert" class="rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">{{ e }}</p>
+    }
     <!-- 1. Tipo -->
     <fieldset>
       <legend class="form-label">Tipo de recurso <span class="text-danger">*</span></legend>

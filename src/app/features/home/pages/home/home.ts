@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Auth } from '../../../../core/auth/auth';
+import { EventosInicio } from '../../components/eventos-inicio/eventos-inicio';
 
 @Component({
   selector: 'app-home',
+  imports: [EventosInicio],
   templateUrl: './home.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },

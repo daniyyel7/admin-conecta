@@ -1,3 +1,5 @@
+import { setDepartamentos } from '../../../../core/catalogos/departamentos';
+import { DEPARTAMENTOS_DEMO, proveerApiFalsa } from '../../../../../testing/api-falsa';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { EventosStore } from '../../services/eventos-store';
@@ -21,9 +23,10 @@ describe('EventoForm', () => {
   const errores = () => [...el.querySelectorAll('.form-error')].map((e) => e.textContent?.trim());
 
   async function crear(id?: string) {
+    setDepartamentos(DEPARTAMENTOS_DEMO);
     await TestBed.configureTestingModule({
       imports: [EventoForm],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), ...proveerApiFalsa()],
     }).compileComponents();
     store = TestBed.inject(EventosStore);
     vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);

@@ -1,10 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
-import {
-  DEPARTAMENTOS,
-  departamentoPorNombre,
-} from '../../../../core/catalogos/departamentos';
+import { departamentos, departamentoPorNombre } from '../../../../core/catalogos/departamentos';
 import { ConfirmDialog } from '../../../../shared/confirm-dialog/confirm-dialog';
 import { formatFecha, normalizar } from '../../../../shared/format';
 import { ColeccionFormDialog } from '../../components/coleccion-form-dialog/coleccion-form-dialog';
@@ -49,7 +46,9 @@ export class ColeccionesList {
       const id = departamentoPorNombre(c.apartment).id;
       counts.set(id, (counts.get(id) ?? 0) + 1);
     }
-    return DEPARTAMENTOS.map((d) => ({ depto: d, count: counts.get(d.id) ?? 0 })).filter((c) => c.count > 0);
+    return departamentos()
+      .map((d) => ({ depto: d, count: counts.get(d.id) ?? 0 }))
+      .filter((c) => c.count > 0);
   });
 
   protected readonly filtered = computed(() => {
@@ -59,7 +58,15 @@ export class ColeccionesList {
       if (depto && departamentoPorNombre(c.apartment).id !== depto) return false;
       if (!q) return true;
       const texto = normalizar(
-        [c.title, c.description, c.apartment, c.category, c.location, formatFecha(c.date), ...c.resources.flatMap((r) => [r.title, r.description])].join(' '),
+        [
+          c.title,
+          c.description,
+          c.apartment,
+          c.category,
+          c.location,
+          formatFecha(c.date),
+          ...c.resources.flatMap((r) => [r.title, r.description]),
+        ].join(' '),
       );
       return q.split(/\s+/).every((p) => texto.includes(p));
     });
@@ -92,7 +99,9 @@ export class ColeccionesList {
     this.editing.set(null);
     if (nueva) {
       // Recién creada: lo siguiente es agregarle recursos.
-      this.router.navigate(['/recursos', c.id], { state: { toast: `Se creó "${c.title}". Agrega sus recursos.` } });
+      this.router.navigate(['/recursos', c.id], {
+        state: { toast: `Se creó "${c.title}". Agrega sus recursos.` },
+      });
     } else {
       this.showToast(`Se guardaron los cambios de "${c.title}".`);
     }
@@ -103,7 +112,16 @@ export class ColeccionesList {
     this.store
       .setCollectionVisible(c.id, !c.visible)
       .pipe(finalize(() => this.togglingId.set(null)))
-      .subscribe((u) => this.showToast(u.visible ? `"${u.title}" ahora es visible en la app.` : `"${u.title}" se ocultó de la app.`));
+      .subscribe({
+        next: (u) =>
+          this.showToast(
+            u.visible
+              ? `"${u.title}" ahora es visible en la app.`
+              : `"${u.title}" se ocultó de la app.`,
+          ),
+        error: (e: unknown) =>
+          this.showToast(e instanceof Error ? e.message : 'No se pudo completar la acción.'),
+      });
   }
 
   protected confirmDelete(): void {
@@ -113,9 +131,15 @@ export class ColeccionesList {
     this.store
       .removeCollection(c.id)
       .pipe(finalize(() => this.deleting.set(false)))
-      .subscribe(() => {
-        this.toDelete.set(null);
-        this.showToast(`Se eliminó la colección "${c.title}".`);
+      .subscribe({
+        error: (e: unknown) => {
+          this.toDelete.set(null);
+          this.showToast(e instanceof Error ? e.message : 'No se pudo eliminar.');
+        },
+        next: () => {
+          this.toDelete.set(null);
+          this.showToast(`Se eliminó la colección "${c.title}".`);
+        },
       });
   }
 

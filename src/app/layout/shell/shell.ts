@@ -13,6 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { Auth } from '../../core/auth/auth';
+import { CatalogosStore } from '../../core/catalogos/catalogos-store';
 import { UserMenu } from '../user-menu/user-menu';
 import { ThemeSwitcher } from '../../shared/theme-switcher/theme-switcher';
 import { ChangePasswordDialog } from '../change-password-dialog/change-password-dialog';
@@ -42,6 +43,7 @@ interface NavItem {
 })
 export class Shell {
   private readonly auth = inject(Auth);
+  private readonly catalogos = inject(CatalogosStore);
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
   private readonly menuButton = viewChild.required<ElementRef<HTMLButtonElement>>('menuButton');
@@ -74,6 +76,8 @@ export class Shell {
   protected readonly userEmail = computed(() => this.auth.user()?.email ?? '');
 
   constructor() {
+    // Listas desplegables (departamentos, categorías, límites de subida) para todo el panel.
+    this.catalogos.load();
     // Cierra el menú al navegar.
     this.router.events
       .pipe(
@@ -112,7 +116,6 @@ export class Shell {
 
   protected logout(): void {
     this.menuOpen.set(false);
-    this.auth.logout();
-    this.router.navigateByUrl('/login');
+    this.auth.logout().subscribe(() => this.router.navigateByUrl('/login'));
   }
 }

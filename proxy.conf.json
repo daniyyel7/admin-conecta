@@ -1,0 +1,7 @@
+{
+  "/api-appumch": {
+    "target": "http://localhost:3201",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

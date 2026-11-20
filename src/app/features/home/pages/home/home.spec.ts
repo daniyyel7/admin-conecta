@@ -2,12 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { Auth } from '../../../../core/auth/auth';
 import { Home } from './home';
+import { proveerApiFalsa } from '../../../../../testing/api-falsa';
 
 describe('Home', () => {
   it('saluda al usuario con su nombre y muestra la fecha', async () => {
     await TestBed.configureTestingModule({
       imports: [Home],
       providers: [
+        ...proveerApiFalsa(),
         {
           provide: Auth,
           useValue: { user: signal({ email: 'd@x.org', name: 'David Mazariegos' }) },

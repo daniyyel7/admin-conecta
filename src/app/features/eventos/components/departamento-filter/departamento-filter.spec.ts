@@ -1,9 +1,9 @@
+import { DEPARTAMENTOS_DEMO } from '../../../../../testing/api-falsa';
 import { TestBed } from '@angular/core/testing';
-import { DEPARTAMENTOS } from '../../models/evento';
 import { DepartamentoFilter } from './departamento-filter';
 
 describe('DepartamentoFilter', () => {
-  const opciones = DEPARTAMENTOS.slice(0, 3).map((depto, i) => ({ depto, count: i + 1 }));
+  const opciones = DEPARTAMENTOS_DEMO.slice(0, 3).map((depto, i) => ({ depto, count: i + 1 }));
 
   async function setup() {
     const fixture = TestBed.createComponent(DepartamentoFilter);

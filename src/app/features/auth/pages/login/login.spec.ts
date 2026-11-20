@@ -1,3 +1,4 @@
+import { proveerApiFalsa } from '../../../../../testing/api-falsa';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Login } from './login';
@@ -6,7 +7,7 @@ describe('Login', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Login],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), ...proveerApiFalsa()],
     }).compileComponents();
   });
 

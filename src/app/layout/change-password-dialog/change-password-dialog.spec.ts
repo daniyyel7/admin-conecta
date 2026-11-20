@@ -1,3 +1,4 @@
+import { proveerApiFalsa } from '../../../testing/api-falsa';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ChangePasswordDialog } from './change-password-dialog';
 
@@ -20,6 +21,7 @@ describe('ChangePasswordDialog', () => {
     HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
       this.setAttribute('open', '');
     };
+    TestBed.configureTestingModule({ providers: proveerApiFalsa() });
     fixture = TestBed.createComponent(ChangePasswordDialog);
     el = fixture.nativeElement;
     await fixture.whenStable();

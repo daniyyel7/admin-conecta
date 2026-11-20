@@ -1,8 +1,10 @@
+import { setDepartamentos } from '../../../../core/catalogos/departamentos';
+import { DEPARTAMENTOS_DEMO, proveerApiFalsa } from '../../../../../testing/api-falsa';
 import { TestBed } from '@angular/core/testing';
 import { ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { EventosStore } from '../../services/eventos-store';
-import { EVENTOS_MOCK } from '../../services/eventos.mock';
+import { EVENTOS_MOCK } from '../../../../../testing/eventos.mock';
 import { EventosList } from './eventos-list';
 
 describe('EventosList', () => {
@@ -24,9 +26,10 @@ describe('EventosList', () => {
   const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   beforeEach(async () => {
+    setDepartamentos(DEPARTAMENTOS_DEMO);
     await TestBed.configureTestingModule({
       imports: [EventosList],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), ...proveerApiFalsa()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EventosList);

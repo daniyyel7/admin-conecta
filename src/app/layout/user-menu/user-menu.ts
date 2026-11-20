@@ -156,7 +156,6 @@ export class UserMenu {
 
   protected logout(): void {
     this.open.set(false);
-    this.auth.logout();
-    this.router.navigateByUrl('/login');
+    this.auth.logout().subscribe(() => this.router.navigateByUrl('/login'));
   }
 }

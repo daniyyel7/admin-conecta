@@ -1,4 +1,4 @@
-import { Evento } from '../models/evento';
+import { Evento } from '../app/features/eventos/models/evento';
 
 /** Datos de ejemplo mientras no exista la API. */
 export const EVENTOS_MOCK: Evento[] = [

@@ -1,6 +1,8 @@
+import { proveerApiFalsa } from '../../../testing/api-falsa';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { Auth } from '../../core/auth/auth';
 import { Shell } from './shell';
 
@@ -10,11 +12,12 @@ describe('Shell', () => {
       imports: [Shell],
       providers: [
         provideRouter([]),
+        ...proveerApiFalsa(),
         {
           provide: Auth,
           useValue: {
             user: signal({ email: 'david.mazariegos@conecta7.org', name: 'David Mazariegos' }),
-            logout: vi.fn(),
+            logout: vi.fn(() => of(undefined)),
           },
         },
       ],

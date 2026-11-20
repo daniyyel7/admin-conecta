@@ -7,12 +7,24 @@ Hoy todo está simulado en el frontend; cada endpoint indica qué pantalla lo us
 
 | Tema | Propuesta |
 |---|---|
-| URL base | `https://app.umch.org.mx/api/admin` (en este documento las rutas son relativas a esa base) |
+| URL base | `https://app.umch.org.mx/api-appumch/v1/admin` (API Nest `api-umch`; en este documento las rutas son relativas a esa base, p. ej. `/auth/login` → `/api-appumch/v1/admin/auth/login`) |
 | Formato | JSON (`Content-Type: application/json`), salvo la subida de archivos (`multipart/form-data`) |
 | Fechas | `yyyy-mm-dd` (ej. `2026-11-19`). Para calcular estados usar la zona horaria `America/Mexico_City` |
 | Autenticación | `Authorization: Bearer <accessToken>` en todo excepto login, refresh, forgot-password y reset-password (incluye validate) |
 | IDs | Texto (`"EVT-2026-105"`, `"1"`) |
 | CORS | Permitir el origen `https://app.umch.org.mx` |
+
+### Implementado en `api-umch` (diferencias con esta propuesta)
+
+| Tema | Cómo quedó |
+|---|---|
+| Ids | El `id` de eventos, colecciones y recursos es su `orden` (`"1"`, `"2"`…), el mismo que recibe la app. Los recursos se numeran dentro de su colección. |
+| Departamentos / categorías | `departamentoId` y `categoriaId` son el slug (`"juvenil"`). En colecciones, `apartment` y `category` aceptan el nombre o el slug. |
+| Eventos | Aceptan `categoriaId` opcional (lo que la app recibe en `category`). La respuesta incluye `visible` y `motivoCancelacion`. |
+| Eliminar | **Borrado lógico** en todo: el registro se marca como eliminado y deja de salir en la app y en el panel. **Los archivos no se borran** del servidor. |
+| `POST /archivos` | Los datos van en la **URL**, no en el formulario: `/archivos?destino=evento-portada` o `/archivos?destino=recurso&tipo=pdf&coleccion=1`. El archivo va en el campo `file`. Se guarda en `/media/publico/<tipo>/<carpeta de la colección>/` (portadas en `imagenes/eventos/`). |
+| Límites de subida | Salen de la tabla `tipos_recurso` (`GET /catalogos/tipos-recurso`): PDF y documentos 50 MB, imagen 10 MB (también portadas), audio 200 MB, video 2 GB. |
+| Recursos con archivo | `link` debe ser la URL que regresó `/archivos` y el archivo debe existir; si no, `400` con `errors.link`. |
 
 ### Formato de errores (todos los endpoints)
 

@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { Router, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { Auth } from '../../core/auth/auth';
 import { UserMenu } from './user-menu';
 
 describe('UserMenu', () => {
-  const logout = vi.fn();
+  const logout = vi.fn(() => of(undefined));
 
   beforeEach(async () => {
     logout.mockClear();

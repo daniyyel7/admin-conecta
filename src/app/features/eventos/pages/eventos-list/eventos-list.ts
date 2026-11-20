@@ -17,7 +17,7 @@ import {
 } from '../../components/departamento-filter/departamento-filter';
 import { EstadoFilter } from '../../components/estado-filter/estado-filter';
 import {
-  DEPARTAMENTOS,
+  departamentos,
   ESTADO_LABEL,
   EstadoEvento,
   Evento,
@@ -32,7 +32,14 @@ const PAGE_SIZE = 5;
 
 @Component({
   selector: 'app-eventos-list',
-  imports: [RouterLink, NgTemplateOutlet, ClickOutside, ConfirmDialog, DepartamentoFilter, EstadoFilter],
+  imports: [
+    RouterLink,
+    NgTemplateOutlet,
+    ClickOutside,
+    ConfirmDialog,
+    DepartamentoFilter,
+    EstadoFilter,
+  ],
   templateUrl: './eventos-list.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -68,8 +75,9 @@ export class EventosList {
 
   protected readonly opcionesDepto = computed<DepartamentoOpcion[]>(() => {
     const counts = new Map<string, number>();
-    for (const e of this.store.eventos()) counts.set(e.departamentoId, (counts.get(e.departamentoId) ?? 0) + 1);
-    return DEPARTAMENTOS.map((depto) => ({ depto, count: counts.get(depto.id) ?? 0 }));
+    for (const e of this.store.eventos())
+      counts.set(e.departamentoId, (counts.get(e.departamentoId) ?? 0) + 1);
+    return departamentos().map((depto) => ({ depto, count: counts.get(depto.id) ?? 0 }));
   });
 
   protected readonly estadoCounts = computed(() => {
@@ -87,7 +95,15 @@ export class EventosList {
       if (estado && e.estado !== estado) return false;
       if (!q) return true;
       const texto = normalizar(
-        [e.nombre, e.id, departamentoDe(e).nombre, e.ubicacion, formatFecha(e.fechaInicio), e.fechaInicio, ...e.etiquetas].join(' '),
+        [
+          e.nombre,
+          e.id,
+          departamentoDe(e).nombre,
+          e.ubicacion,
+          formatFecha(e.fechaInicio),
+          e.fechaInicio,
+          ...e.etiquetas,
+        ].join(' '),
       );
       return q.split(/\s+/).every((palabra) => texto.includes(palabra));
     });
@@ -97,7 +113,9 @@ export class EventosList {
     () => !!this.search().trim() || this.deptos().size > 0 || this.estado() !== null,
   );
 
-  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filtered().length / PAGE_SIZE)));
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filtered().length / PAGE_SIZE)),
+  );
   /** La página actual nunca pasa de la última (p. ej. después de eliminar). */
   protected readonly currentPage = computed(() => Math.min(this.page(), this.totalPages()));
   protected readonly pageItems = computed(() => {
@@ -155,9 +173,15 @@ export class EventosList {
     this.store
       .remove(evento.id)
       .pipe(finalize(() => this.deleting.set(false)))
-      .subscribe(() => {
-        this.toDelete.set(null);
-        this.showToast(`Se eliminó "${evento.nombre}".`);
+      .subscribe({
+        error: (e: unknown) => {
+          this.toDelete.set(null);
+          this.showToast(e instanceof Error ? e.message : 'No se pudo eliminar.');
+        },
+        next: () => {
+          this.toDelete.set(null);
+          this.showToast(`Se eliminó "${evento.nombre}".`);
+        },
       });
   }
 
@@ -173,9 +197,15 @@ export class EventosList {
     this.store
       .cancel(evento.id)
       .pipe(finalize(() => this.cancelling.set(false)))
-      .subscribe(() => {
-        this.toCancel.set(null);
-        this.showToast(`Se canceló "${evento.nombre}".`);
+      .subscribe({
+        error: (e: unknown) => {
+          this.toCancel.set(null);
+          this.showToast(e instanceof Error ? e.message : 'No se pudo cancelar.');
+        },
+        next: () => {
+          this.toCancel.set(null);
+          this.showToast(`Se canceló "${evento.nombre}".`);
+        },
       });
   }
 

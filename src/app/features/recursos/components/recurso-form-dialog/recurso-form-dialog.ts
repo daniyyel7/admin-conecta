@@ -21,6 +21,7 @@ import {
   nombreArchivo,
   typeConfig,
 } from '../../models/recurso';
+import { CatalogosStore } from '../../../../core/catalogos/catalogos-store';
 import { ColeccionesStore } from '../../services/colecciones-store';
 
 type Source = 'file' | 'url';
@@ -38,6 +39,7 @@ type Source = 'file' | 'url';
 export class RecursoFormDialog implements OnInit {
   private readonly store = inject(ColeccionesStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly catalogos = inject(CatalogosStore);
 
   readonly coleccionId = input.required<string>();
   readonly recurso = input<Resource | null>(null);
@@ -60,7 +62,13 @@ export class RecursoFormDialog implements OnInit {
   );
   protected readonly config = computed(() => {
     const t = this.typeValue();
-    return t ? typeConfig(t) : null;
+    if (!t) return null;
+    // Formatos y tamaño máximo los define la API (tabla tipos_recurso); si aún no cargan, los del panel.
+    const limite = this.catalogos.limite(t);
+    const base = typeConfig(t);
+    return limite
+      ? { ...base, accept: limite.accept ?? base.accept, maxMb: limite.maxMb ?? base.maxMb, formats: limite.formats ?? base.formats }
+      : base;
   });
 
   /** De dónde sale el contenido (para video se puede elegir). */
@@ -82,6 +90,7 @@ export class RecursoFormDialog implements OnInit {
 
   protected readonly saving = signal(false);
   protected readonly submitted = signal(false);
+  protected readonly saveError = signal<string | null>(null);
 
   private readonly linkValue = toSignal(
     this.form.controls.link.valueChanges.pipe(startWith(this.form.controls.link.value)),
@@ -194,7 +203,7 @@ export class RecursoFormDialog implements OnInit {
     }
 
     this.uploadSub = this.store
-      .upload(file)
+      .upload(file, cfg.type, this.coleccionId())
       .pipe(finalize(() => this.uploading.set(false)))
       .subscribe({
         next: ({ progress, url }) => {
@@ -204,8 +213,10 @@ export class RecursoFormDialog implements OnInit {
             this.form.controls.link.markAsDirty();
           }
         },
-        error: () => {
-          this.fileError.set('No se pudo subir el archivo. Inténtalo de nuevo.');
+        error: (err: unknown) => {
+          this.fileError.set(
+            err instanceof Error ? err.message : 'No se pudo subir el archivo. Inténtalo de nuevo.',
+          );
           this.fileName.set(null);
         },
       });
@@ -260,7 +271,12 @@ export class RecursoFormDialog implements OnInit {
       ? this.store.updateResource(this.coleccionId(), actual.id, data)
       : this.store.addResource(this.coleccionId(), data);
     this.saving.set(true);
-    request.pipe(finalize(() => this.saving.set(false))).subscribe((r) => this.saved.emit(r));
+    this.saveError.set(null);
+    request.pipe(finalize(() => this.saving.set(false))).subscribe({
+      next: (r) => this.saved.emit(r),
+      error: (err: unknown) =>
+        this.saveError.set(err instanceof Error ? err.message : 'No se pudo guardar el recurso.'),
+    });
   }
 
   protected formatSize(bytes: number | null): string {

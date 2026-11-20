@@ -1,7 +1,7 @@
 import { Departamento, departamentoPorId } from '../../../core/catalogos/departamentos';
 
 // Reexportados para no cambiar los imports existentes de la sección de eventos.
-export { DEPARTAMENTOS, type Departamento } from '../../../core/catalogos/departamentos';
+export { departamentos, type Departamento } from '../../../core/catalogos/departamentos';
 export { formatFecha, normalizar } from '../../../shared/format';
 
 /**

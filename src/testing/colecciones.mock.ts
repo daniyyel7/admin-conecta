@@ -1,4 +1,4 @@
-import { Collection, Resource, ResourceType, contarArchivos } from '../models/recurso';
+import { Collection, Resource, ResourceType, contarArchivos } from '../app/features/recursos/models/recurso';
 
 /** Datos de ejemplo con la forma del JSON de la API, mientras no exista el endpoint. */
 

@@ -30,7 +30,9 @@ export class ColeccionDetail {
   /** Viene de la ruta `:id`. */
   readonly id = input.required<string>();
 
-  protected readonly coleccion = computed(() => this.store.colecciones().find((c) => c.id === this.id()));
+  protected readonly coleccion = computed(() =>
+    this.store.colecciones().find((c) => c.id === this.id()),
+  );
   protected readonly notFound = computed(
     () => !this.store.loading() && this.store.total() > 0 && !this.coleccion(),
   );
@@ -39,8 +41,12 @@ export class ColeccionDetail {
   protected readonly tipo = signal<ResourceType | null>(null);
   protected readonly tipos = computed(() => {
     const counts = new Map<ResourceType, number>();
-    for (const r of this.coleccion()?.resources ?? []) counts.set(r.type, (counts.get(r.type) ?? 0) + 1);
-    return RESOURCE_TYPES.filter((t) => counts.has(t.type)).map((t) => ({ cfg: t, count: counts.get(t.type)! }));
+    for (const r of this.coleccion()?.resources ?? [])
+      counts.set(r.type, (counts.get(r.type) ?? 0) + 1);
+    return RESOURCE_TYPES.filter((t) => counts.has(t.type)).map((t) => ({
+      cfg: t,
+      count: counts.get(t.type)!,
+    }));
   });
   protected readonly recursos = computed(() => {
     const t = this.tipo();
@@ -97,7 +103,14 @@ export class ColeccionDetail {
     this.store
       .setResourceVisible(this.id(), r.id, !r.visible)
       .pipe(finalize(() => this.togglingId.set(null)))
-      .subscribe((u) => this.showToast(u.visible ? `"${u.title}" ahora es visible.` : `"${u.title}" se ocultó de la app.`));
+      .subscribe({
+        next: (u) =>
+          this.showToast(
+            u.visible ? `"${u.title}" ahora es visible.` : `"${u.title}" se ocultó de la app.`,
+          ),
+        error: (e: unknown) =>
+          this.showToast(e instanceof Error ? e.message : 'No se pudo completar la acción.'),
+      });
   }
 
   protected confirmDelete(): void {
@@ -107,10 +120,16 @@ export class ColeccionDetail {
     this.store
       .removeResource(this.id(), r.id)
       .pipe(finalize(() => this.deleting.set(false)))
-      .subscribe(() => {
-        this.toDelete.set(null);
-        if (this.tipo() && !this.recursos().length) this.tipo.set(null);
-        this.showToast(`Se eliminó "${r.title}".`);
+      .subscribe({
+        error: (e: unknown) => {
+          this.toDelete.set(null);
+          this.showToast(e instanceof Error ? e.message : 'No se pudo eliminar.');
+        },
+        next: () => {
+          this.toDelete.set(null);
+          if (this.tipo() && !this.recursos().length) this.tipo.set(null);
+          this.showToast(`Se eliminó "${r.title}".`);
+        },
       });
   }
 

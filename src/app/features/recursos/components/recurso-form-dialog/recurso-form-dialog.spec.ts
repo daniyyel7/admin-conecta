@@ -1,3 +1,4 @@
+import { proveerApiFalsa } from '../../../../../testing/api-falsa';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ColeccionesStore } from '../../services/colecciones-store';
 import { RecursoFormDialog, validarArchivo } from './recurso-form-dialog';
@@ -36,6 +37,7 @@ describe('RecursoFormDialog', () => {
     HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
       this.setAttribute('open', '');
     };
+    TestBed.configureTestingModule({ providers: proveerApiFalsa() });
     fixture = TestBed.createComponent(RecursoFormDialog);
     fixture.componentRef.setInput('coleccionId', '1');
     el = fixture.nativeElement;

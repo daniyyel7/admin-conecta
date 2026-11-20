@@ -1,3 +1,4 @@
+import { proveerApiFalsa } from '../../../../../testing/api-falsa';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ResetPassword } from './reset-password';
@@ -15,13 +16,15 @@ describe('ResetPassword', () => {
   async function abrir(token: string) {
     await TestBed.configureTestingModule({
       imports: [ResetPassword],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), ...proveerApiFalsa()],
     }).compileComponents();
     fixture = TestBed.createComponent(ResetPassword);
     fixture.componentRef.setInput('token', token);
     el = fixture.nativeElement;
-    await fixture.whenStable();
+    // Mientras la API valida el enlace se muestra el estado de carga.
+    fixture.detectChanges();
     expect(el.textContent).toContain('Verificando el enlace');
+    await fixture.whenStable();
     await esperar(550);
     await fixture.whenStable();
   }

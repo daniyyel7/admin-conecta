@@ -1,6 +1,19 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, delay, mergeMap, of, tap, throwError, timer } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  finalize,
+  map,
+  of,
+  shareReplay,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { aApiError } from '../api/api-error';
 
 export interface Credentials {
   email: string;
@@ -15,120 +28,164 @@ export class ResetTokenInvalidError extends Error {
 }
 
 export interface AdminUser {
+  id: string;
   email: string;
   name: string;
+  role: string;
 }
 
-const STORAGE_KEY = 'c7.admin.user';
+interface TokenResponse {
+  accessToken: string;
+  expiresIn: number;
+}
+
+interface LoginResponse extends TokenResponse {
+  user: AdminUser;
+}
+
+/** Rutas de `/auth` que no llevan `Authorization` (usan la cookie o no requieren sesión). */
+export const AUTH_PUBLICAS = [
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+];
 
 /**
- * Servicio de autenticación.
- * TODO: reemplazar el mock de `login` por la llamada real a la API
- * (p. ej. `this.http.post<LoginResponse>(`${apiUrl}/auth/login`, credentials)`)
- * y guardar el token que devuelva en lugar del usuario.
+ * Sesión del panel contra la API (`api-umch`, sección 1 de docs/API-endpoints.md).
+ *
+ * - El `accessToken` (15 min) vive solo en memoria.
+ * - El refresh token va en una cookie httpOnly que el navegador manda solo a `/auth`;
+ *   al recargar la página la sesión se recupera con `refresh()`.
  */
 @Injectable({ providedIn: 'root' })
 export class Auth {
+  private readonly http = inject(HttpClient);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  private readonly _user = signal<AdminUser | null>(this.restore());
+  private readonly api = `${environment.apiUrl}/auth`;
+
+  private readonly _user = signal<AdminUser | null>(null);
+  private readonly _token = signal<string | null>(null);
+  /** Un solo `refresh` a la vez aunque varias peticiones reciban 401 juntas. */
+  private refreshEnCurso: Observable<string | null> | null = null;
+  /** Ya se confirmó que no hay cookie de sesión: los guards no vuelven a preguntar hasta el login. */
+  private sinSesion = false;
 
   readonly user = this._user.asReadonly();
-  readonly isAuthenticated = computed(() => this._user() !== null);
+  readonly isAuthenticated = computed(() => this._user() !== null && this._token() !== null);
 
-  login({ email, password }: Credentials): Observable<AdminUser> {
-    // Mock temporal: cualquier contraseña de 6+ caracteres es válida.
-    if (password.length < 6) {
-      return errorDespues(600, () => new Error('Usuario o contraseña incorrectos.'));
-    }
-    return of({ email, name: nameFromEmail(email) }).pipe(
-      delay(600),
-      tap((user) => this.setUser(user)),
-    );
+  /** Token actual para el interceptor. */
+  accessToken(): string | null {
+    return this._token();
+  }
+
+  login(credentials: Credentials): Observable<AdminUser> {
+    return this.http
+      .post<LoginResponse>(`${this.api}/login`, credentials, { withCredentials: true })
+      .pipe(
+        tap((r) => {
+          this.sinSesion = false;
+          this.setSesion(r.accessToken, r.user);
+        }),
+        map((r) => r.user),
+        catchError((e) => throwError(() => aApiError(e, 'No se pudo iniciar sesión.'))),
+      );
   }
 
   /**
-   * Solicita el envío del enlace para restablecer la contraseña.
-   * TODO: reemplazar por `this.http.post<void>(`${apiUrl}/auth/forgot-password`, { email })`.
-   * La API debería responder igual exista o no la cuenta, para no revelar qué correos están registrados.
+   * Pide un access token nuevo con la cookie. Regresa el token o `null` si ya no hay sesión.
+   * Si aún no se conoce al usuario (recién se recargó la página), también lo trae.
    */
+  refresh(): Observable<string | null> {
+    if (!this.isBrowser) return of(null);
+    this.refreshEnCurso ??= this.http
+      .post<TokenResponse>(`${this.api}/refresh`, {}, { withCredentials: true })
+      .pipe(
+        switchMap((r) => {
+          this._token.set(r.accessToken);
+          if (this._user()) return of(r.accessToken);
+          return this.http.get<AdminUser>(`${this.api}/me`).pipe(
+            tap((user) => this._user.set(user)),
+            map(() => r.accessToken),
+          );
+        }),
+        catchError(() => {
+          this.limpiar();
+          this.sinSesion = true;
+          return of(null);
+        }),
+        finalize(() => (this.refreshEnCurso = null)),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+    return this.refreshEnCurso;
+  }
+
+  /** ¿Hay sesión? Si no hay token en memoria intenta recuperarla con la cookie. */
+  ensureSession(): Observable<boolean> {
+    if (this.isAuthenticated()) return of(true);
+    if (this.sinSesion) return of(false);
+    return this.refresh().pipe(map((token) => token !== null));
+  }
+
+  /** Solicita el enlace para restablecer la contraseña (la API responde igual exista o no la cuenta). */
   requestPasswordReset(email: string): Observable<void> {
-    return of(void email).pipe(delay(800));
+    return this.http
+      .post<void>(`${this.api}/forgot-password`, { email })
+      .pipe(catchError((e) => throwError(() => aApiError(e, 'No pudimos enviar el enlace.'))));
   }
 
-  /**
-   * Comprueba que el enlace del correo siga siendo válido.
-   * TODO: `this.http.get<void>(`${apiUrl}/auth/reset-password/validate`, { params: { token } })`
-   * (la API responde 410 si el token venció o ya se usó).
-   */
+  /** Comprueba que el enlace del correo siga siendo válido (410 si venció o ya se usó). */
   validateResetToken(token: string): Observable<void> {
-    // Mock: un token vacío o "vencido" no es válido.
-    if (!token || token === 'vencido') {
-      return errorDespues(500, () => new ResetTokenInvalidError());
-    }
-    return of(undefined).pipe(delay(500));
+    if (!token) return throwError(() => new ResetTokenInvalidError());
+    return this.http
+      .get<void>(`${this.api}/reset-password/validate`, { params: { token } })
+      .pipe(catchError((e) => throwError(() => this.errorReset(e))));
   }
 
-  /**
-   * Guarda la nueva contraseña usando el token del correo.
-   * TODO: `this.http.post<void>(`${apiUrl}/auth/reset-password`, { token, password })`.
-   */
+  /** Guarda la nueva contraseña usando el token del correo. */
   resetPassword(token: string, password: string): Observable<void> {
-    if (!token || token === 'vencido') {
-      return errorDespues(700, () => new ResetTokenInvalidError());
-    }
-    return of(void password).pipe(delay(700));
+    return this.http
+      .post<void>(`${this.api}/reset-password`, { token, password })
+      .pipe(catchError((e) => throwError(() => this.errorReset(e))));
+  }
+
+  /** Cambia la contraseña del usuario con sesión iniciada (400 si la actual no es correcta). */
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.api}/change-password`, { currentPassword, newPassword })
+      .pipe(
+        catchError((e) => throwError(() => aApiError(e, 'No se pudo cambiar la contraseña.'))),
+      );
   }
 
   /**
-   * Cambia la contraseña del usuario con sesión iniciada.
-   * TODO: `this.http.post<void>(`${apiUrl}/auth/change-password`, { currentPassword, newPassword })`
-   * (la API responde 400/422 si la contraseña actual no es correcta).
+   * Cierra la sesión en la API (revoca el refresh y borra la cookie) y en el panel.
+   * Termina siempre, aunque la API falle; navega al login después de que termine para que
+   * la pantalla de login no recupere la sesión con la cookie anterior.
    */
-  changePassword(currentPassword: string, newPassword: string): Observable<void> {
-    // Mock: igual que el login, la contraseña actual "correcta" es cualquiera de 6+ caracteres.
-    if (currentPassword.length < 6) {
-      return errorDespues(700, () => new Error('La contraseña actual no es correcta.'));
-    }
-    return of(void newPassword).pipe(delay(700));
+  logout(): Observable<void> {
+    this.limpiar();
+    this.sinSesion = true;
+    if (!this.isBrowser) return of(undefined);
+    return this.http
+      .post<void>(`${this.api}/logout`, {}, { withCredentials: true })
+      .pipe(catchError(() => of(undefined)));
   }
 
-  logout(): void {
-    this.setUser(null);
+  /** Olvida la sesión local (p. ej. cuando el refresh ya no es válido). */
+  limpiar(): void {
+    this._token.set(null);
+    this._user.set(null);
   }
 
-  private setUser(user: AdminUser | null): void {
+  private setSesion(token: string, user: AdminUser): void {
+    this._token.set(token);
     this._user.set(user);
-    if (!this.isBrowser) return;
-    try {
-      if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-      else localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // Almacenamiento no disponible (modo privado, etc.): la sesión vive solo en memoria.
-    }
   }
 
-  private restore(): AdminUser | null {
-    if (!this.isBrowser) return null;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as AdminUser) : null;
-    } catch {
-      return null;
-    }
+  private errorReset(error: unknown): Error {
+    const e = aApiError(error, 'No se pudo guardar la contraseña.');
+    return e.status === 410 ? new ResetTokenInvalidError() : e;
   }
-}
-
-/** "david.mazariegos@conecta7.org" → "David Mazariegos" (solo para el mock). */
-function nameFromEmail(email: string): string {
-  return email
-    .split('@')[0]
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((w) => w[0].toUpperCase() + w.slice(1))
-    .join(' ');
-}
-
-/** Error simulado que llega después de `ms` (como una respuesta real de la API). */
-function errorDespues(ms: number, crear: () => Error): Observable<never> {
-  return timer(ms).pipe(mergeMap(() => throwError(crear)));
 }

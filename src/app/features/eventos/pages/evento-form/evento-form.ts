@@ -18,12 +18,15 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize, startWith } from 'rxjs';
+import { ArchivosService } from '../../../../core/api/archivos';
+import { CatalogosStore } from '../../../../core/catalogos/catalogos-store';
 import { ConfirmDialog } from '../../../../shared/confirm-dialog/confirm-dialog';
 import { CanLeave } from '../../../../shared/unsaved-changes-guard';
-import { DEPARTAMENTOS, ESTADO_LABEL, EventoInput } from '../../models/evento';
+import { departamentos, ESTADO_LABEL, EventoInput } from '../../models/evento';
 import { EventosStore } from '../../services/eventos-store';
 
-const MAX_IMAGEN_MB = 2;
+/** Si el catálogo aún no carga (la API define el límite real en tipos_recurso: image). */
+const MAX_IMAGEN_MB = 10;
 
 /** La fecha de fin no puede ser anterior a la de inicio. */
 function rangoFechas(group: AbstractControl): ValidationErrors | null {
@@ -46,13 +49,15 @@ function rangoFechas(group: AbstractControl): ValidationErrors | null {
 export class EventoForm implements CanLeave {
   private readonly store = inject(EventosStore);
   private readonly router = inject(Router);
+  private readonly archivos = inject(ArchivosService);
+  private readonly catalogos = inject(CatalogosStore);
 
   /** Viene de la ruta `:id/editar` (withComponentInputBinding). */
   readonly id = input<string>();
 
-  protected readonly departamentos = DEPARTAMENTOS;
+  protected readonly departamentos = departamentos;
   protected readonly estadoLabel = ESTADO_LABEL;
-  protected readonly maxImagenMb = MAX_IMAGEN_MB;
+  protected readonly maxImagenMb = computed(() => this.catalogos.limite('image')?.maxMb ?? MAX_IMAGEN_MB);
 
   protected readonly form = inject(FormBuilder).nonNullable.group(
     {
@@ -80,6 +85,8 @@ export class EventoForm implements CanLeave {
   protected readonly saving = signal(false);
   protected readonly submitted = signal(false);
   protected readonly imagenError = signal<string | null>(null);
+  protected readonly subiendo = signal<number | null>(null);
+  protected readonly saveError = signal<string | null>(null);
   protected readonly leaveDialog = signal(false);
   private leaveResolver?: (ok: boolean) => void;
   private saved = false;
@@ -129,19 +136,29 @@ export class EventoForm implements CanLeave {
       this.imagenError.set('El archivo debe ser una imagen (JPG, PNG o WebP).');
       return;
     }
-    if (file.size > MAX_IMAGEN_MB * 1024 * 1024) {
-      this.imagenError.set(`La imagen pesa más de ${MAX_IMAGEN_MB} MB.`);
+    const maxMb = this.maxImagenMb();
+    if (file.size > maxMb * 1024 * 1024) {
+      this.imagenError.set(`La imagen pesa más de ${maxMb} MB.`);
       return;
     }
     this.imagenError.set(null);
-    // TODO: con la API, subir el archivo y guardar la URL que devuelva.
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.form.controls.imagen.setValue(String(reader.result));
-      this.form.controls.imagen.markAsDirty();
-      this.form.controls.imagen.markAsTouched();
-    };
-    reader.readAsDataURL(file);
+    // Se sube a la API (imagenes/eventos/) y el evento guarda la URL que regresa.
+    this.subiendo.set(0);
+    this.archivos
+      .subir(file, { destino: 'evento-portada' })
+      .pipe(finalize(() => this.subiendo.set(null)))
+      .subscribe({
+        next: ({ progress, url }) => {
+          this.subiendo.set(progress);
+          if (url) {
+            this.form.controls.imagen.setValue(url);
+            this.form.controls.imagen.markAsDirty();
+            this.form.controls.imagen.markAsTouched();
+          }
+        },
+        error: (err: unknown) =>
+          this.imagenError.set(err instanceof Error ? err.message : 'No se pudo subir la imagen.'),
+      });
   }
 
   protected removeImagen(): void {
@@ -153,6 +170,7 @@ export class EventoForm implements CanLeave {
   // ---- Guardar ----
   protected submit(): void {
     this.submitted.set(true);
+    if (this.subiendo() !== null) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.focusFirstInvalid();
@@ -176,13 +194,18 @@ export class EventoForm implements CanLeave {
     const id = this.id();
     const request = id ? this.store.update(id, data) : this.store.create(data);
     this.saving.set(true);
-    request.pipe(finalize(() => this.saving.set(false))).subscribe((evento) => {
-      this.saved = true;
-      this.router.navigate(['/eventos'], {
-        state: {
-          toast: id ? `Se guardaron los cambios de "${evento.nombre}".` : `Se creó el evento ${evento.id}.`,
-        },
-      });
+    this.saveError.set(null);
+    request.pipe(finalize(() => this.saving.set(false))).subscribe({
+      next: (evento) => {
+        this.saved = true;
+        this.router.navigate(['/eventos'], {
+          state: {
+            toast: id ? `Se guardaron los cambios de "${evento.nombre}".` : `Se creó el evento "${evento.nombre}".`,
+          },
+        });
+      },
+      error: (err: unknown) =>
+        this.saveError.set(err instanceof Error ? err.message : 'No se pudo guardar el evento.'),
     });
   }
 
