@@ -1,0 +1,25 @@
+{
+  "id": "./",
+  "name": "Conecta 7 · Administrador",
+  "short_name": "Conecta7 Admin",
+  "description": "Panel de administración de Conecta7 para la gestión de recursos, eventos eclesiásticos y ministerios locales de la Unión Mexicana de Chiapas.",
+  "lang": "es-MX",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#141518",
+  "theme_color": "#141518",
+  "categories": ["productivity", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Eventos", "url": "./eventos", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Recursos", "url": "./recursos", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

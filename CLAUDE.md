@@ -24,6 +24,16 @@ Antes de dar una tarea por terminada: `npm run build` sin errores y `npm test` e
 
 **Nunca uses `sudo` con npm** (ya causó problemas de permisos en `~/.npm`).
 
+## Producción, SEO y PWA
+
+- URL pública: **https://app.umch.org.mx/admin/**. `baseHref: "/admin/"` solo en la configuración `production`; en desarrollo es `/`.
+  - `src/server.ts` sirve los estáticos bajo `BASE_PATH` (por defecto `/admin`). Si cambias uno, cambia el otro.
+  - `security.allowedHosts` solo permite `app.umch.org.mx`. Para probar el build local: `NG_ALLOWED_HOSTS=localhost PORT=4400 node dist/admin-conecta/server/server.mjs` y abrir `http://localhost:4400/admin/`.
+- Rutas de recursos **relativas** (`logo-conecta7.png`, `icons/...`), nunca con `/` inicial, para que funcionen bajo `/admin/`.
+- SEO por ruta con `SeoTitleStrategy` (`core/seo`): usa `title` y `data: { description, robots }` de cada ruta. Por defecto todo es `noindex, nofollow`; solo `/login` es `index, follow`.
+- Login y recuperar contraseña se pre-renderizan; el panel es `RenderMode.Client` (`app.routes.server.ts`).
+- PWA: `public/manifest.webmanifest`, `ngsw-config.json` (index = `/index.csr.html`) e iconos en `public/icons/` generados desde el logo oficial.
+
 ## Estructura
 
 ```
@@ -83,6 +93,11 @@ src/app/
 
 ## Estilos
 - Tailwind primero; CSS del componente solo para lo que Tailwind no cubra.
+- **Tema claro/oscuro**: nunca uses colores fijos (`#hex`, `neutral-*`, `white/…`). Usa los tokens de `src/styles.css`:
+  `bg-bg`, `bg-surface`, `bg-field`, `bg-chip`, `text-fg`, `text-fg-2`, `text-muted`, `text-subtle`, `border-line`,
+  `border-line-strong`, `bg-hover`, `bg-scrim`, `bg-accent`, `text-accent-fg` (texto naranja con contraste), `text-on-accent`, `text-danger`.
+  En CSS propio usa `var(--c-*)`. El tema lo maneja `core/theme/theme.ts` (`<html data-theme>`, preferencia en `localStorage` `c7.theme`).
+- En CSS de componentes no pongas `display` en clases que también llevan utilidades responsive (`md:hidden`): el CSS del componente gana.
 - Diseño responsive (mobile-first) y accesible: HTML semántico, `aria-*`, foco visible, contraste AA.
 
 ## Pruebas

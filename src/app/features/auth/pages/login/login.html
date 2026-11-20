@@ -1,0 +1,104 @@
+<main class="login-bg relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10">
+  <app-theme-switcher variant="icon" class="theme-corner absolute right-4 z-10" />
+
+  <section
+    class="login-card relative w-full max-w-sm rounded-2xl border border-line bg-surface px-6 pt-6 pb-7"
+    aria-labelledby="login-title"
+  >
+    <app-auth-header title="Bienvenido" titleId="login-title" />
+
+    <form class="mt-6 space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <!-- Usuario -->
+      <div>
+        <label for="email" class="mb-2 block text-xs font-medium text-fg">Usuario</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          autocomplete="username"
+          placeholder="usuario"
+          class="field"
+          [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+          aria-describedby="email-error"
+        />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <p id="email-error" class="mt-1.5 text-[11px] text-danger">
+            @if (form.controls.email.hasError('required')) {
+              Ingresa tu usuario.
+            } @else {
+              Ingresa un correo válido.
+            }
+          </p>
+        }
+      </div>
+
+      <!-- Contraseña -->
+      <div>
+        <div class="mb-2 flex items-center justify-between">
+          <label for="password" class="text-xs font-medium text-fg">Contraseña</label>
+          <a
+            routerLink="/recuperar-contrasena"
+            class="rounded text-[10px] font-medium text-fg transition hover:text-accent-fg focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
+        <div class="relative">
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="••••••••••••"
+            class="field pr-11"
+            [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+            aria-describedby="password-error"
+          />
+          <button
+            type="button"
+            (click)="togglePassword()"
+            class="absolute inset-y-0 right-0 grid w-11 place-items-center rounded-r-lg text-muted transition hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            [attr.aria-pressed]="showPassword()"
+          >
+            @if (showPassword()) {
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-2.2 3.2M6.6 6.6A17.4 17.4 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6" />
+                <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M2 2l20 20" />
+              </svg>
+            } @else {
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            }
+          </button>
+        </div>
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <p id="password-error" class="mt-1.5 text-[11px] text-danger">Ingresa tu contraseña.</p>
+        }
+      </div>
+
+      @if (error(); as message) {
+        <p role="alert" class="rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">
+          {{ message }}
+        </p>
+      }
+
+      <button type="submit" class="btn-primary mt-2" [disabled]="loading()">
+        @if (loading()) {
+          <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".25" stroke-width="3" />
+            <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          </svg>
+          Ingresando…
+        } @else {
+          Iniciar Sesión
+          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        }
+      </button>
+    </form>
+  </section>
+</main>

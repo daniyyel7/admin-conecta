@@ -1,0 +1,53 @@
+/* Estilos compartidos por las pantallas de autenticación (login, recuperar contraseña). */
+@layer components {
+  .login-bg {
+    background:
+      radial-gradient(ellipse 45% 40% at 50% 45%, rgb(243 156 31 / 0.07), transparent 70%),
+      var(--c-bg);
+  }
+
+  .login-card {
+    box-shadow:
+      0 0 0 1px rgb(243 156 31 / 0.06),
+      0 0 40px -6px rgb(243 156 31 / var(--c-glow)),
+      0 24px 48px -12px color-mix(in srgb, var(--c-shade) 60%, transparent);
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-transparent bg-field px-3 py-3 text-sm text-fg transition outline-none placeholder:text-subtle;
+  }
+
+  [data-theme='light'] .field {
+    @apply border-line;
+  }
+
+  .field:focus {
+    @apply border-accent/60 ring-2 ring-accent/20;
+  }
+
+  .field[aria-invalid='true'] {
+    @apply border-danger/75;
+  }
+
+  .btn-primary {
+    @apply flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-on-accent transition disabled:cursor-wait disabled:opacity-80;
+    background: linear-gradient(90deg, #f39c1f 0%, #e98a1f 50%, #d06a1e 100%);
+    box-shadow: 0 8px 20px -6px rgb(243 156 31 / calc(var(--c-glow) + 0.2));
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.07);
+  }
+
+  .btn-primary:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
+  .theme-corner {
+    top: calc(1rem + env(safe-area-inset-top));
+  }
+
+  .link {
+    @apply cursor-pointer rounded font-medium transition hover:text-accent-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-60;
+  }
+}

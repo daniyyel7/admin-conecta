@@ -1,0 +1,99 @@
+/* Piezas compartidas de formularios del panel. */
+@layer components {
+  .form-section-title {
+    @apply text-sm font-semibold tracking-wide text-fg;
+  }
+  .form-label {
+    @apply mb-2 block text-xs font-medium text-fg-2;
+  }
+  .form-help {
+    @apply mt-1.5 text-[11px] text-subtle;
+  }
+  .form-error {
+    @apply mt-1.5 text-[11px] text-danger;
+  }
+
+  /* Barra de acciones: al final en escritorio, fija abajo en móvil */
+  .form-actions {
+    @apply fixed inset-x-0 bottom-0 z-20 flex items-center justify-end gap-2 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur md:static md:mt-6 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  @media (width >= 48rem) {
+    .form-actions {
+      padding-bottom: 0;
+    }
+  }
+
+  /*
+   * Lista desplegable con flecha propia: la del navegador queda pegada al borde.
+   * La flecha se separa 0.875rem del borde y el texto deja espacio para no encimarse.
+   */
+  select.field {
+    @apply cursor-pointer;
+    appearance: none;
+    padding-right: 2.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3a3a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 1rem;
+  }
+  [data-theme='light'] select.field {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f5f68' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+  /* Opción "Selecciona…" en gris mientras no se elige nada */
+  select.field:has(option[value='']:checked) {
+    @apply text-subtle;
+  }
+  select.field option {
+    @apply bg-surface text-fg;
+  }
+  input[type='date'].field {
+    @apply min-h-11;
+  }
+}
+
+
+@layer components {
+  /* Interruptor: <button role="switch" [attr.aria-checked]="..." class="switch"> */
+  .switch {
+    @apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-line-strong transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-60;
+  }
+  .switch::after {
+    content: '';
+    @apply absolute left-0.5 size-5 rounded-full bg-white shadow transition-transform;
+  }
+  .switch[aria-checked='true'] {
+    @apply bg-success;
+  }
+  .switch[aria-checked='true']::after {
+    @apply translate-x-5;
+  }
+  .switch-sm {
+    @apply h-5 w-9;
+  }
+  .switch-sm::after {
+    @apply size-4;
+  }
+  .switch-sm[aria-checked='true']::after {
+    @apply translate-x-4;
+  }
+
+  /* Botones genéricos */
+  .btn-accent {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-on-accent transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60;
+    box-shadow: 0 8px 20px -6px rgb(243 156 31 / var(--c-glow));
+  }
+  .btn-ghost {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium text-fg-2 transition hover:bg-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50;
+  }
+  .btn-soft {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-chip px-4 text-sm font-medium text-fg-2 transition hover:text-fg focus-visible:outline-2 focus-visible:outline-accent;
+  }
+
+  /* Icono de tipo de recurso: usa --type para el color */
+  .type-icon {
+    @apply grid shrink-0 place-items-center rounded-lg;
+    color: var(--type);
+    background: color-mix(in srgb, var(--type) 14%, transparent);
+  }
+}

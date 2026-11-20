@@ -1,13 +1,97 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>AdminConecta</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-</head>
-<body>
-  <app-root></app-root>
-</body>
+<html lang="es-MX">
+  <head>
+    <meta charset="utf-8" />
+    <title>Conecta 7 · Administrador</title>
+    <base href="/" />
+    <!-- Aplica el tema antes de pintar para evitar parpadeo (ver core/theme/theme.ts) -->
+    <script>
+      (function () {
+        var t = 'system';
+        try { t = localStorage.getItem('c7.theme') || 'system'; } catch (e) {}
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!-- SEO base (cada ruta lo actualiza desde SeoTitleStrategy) -->
+    <meta
+      name="description"
+      content="Panel de administración de Conecta7 para la gestión de recursos, eventos eclesiásticos y ministerios locales de la Unión Mexicana de Chiapas."
+    />
+    <!-- Por defecto no indexar: las páginas públicas (login) lo cambian a index -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="application-name" content="Conecta7 Admin" />
+    <meta name="author" content="Unión Mexicana de Chiapas" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Open Graph / redes sociales -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Conecta 7" />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:title" content="Conecta 7 · Administrador" />
+    <meta
+      property="og:description"
+      content="Panel de administración de Conecta7 para la gestión de recursos, eventos eclesiásticos y ministerios locales de la Unión Mexicana de Chiapas."
+    />
+    <meta property="og:url" content="https://app.umch.org.mx/admin/" />
+    <meta property="og:image" content="https://app.umch.org.mx/admin/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Logo de Conecta 7" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://app.umch.org.mx/admin/og-image.png" />
+
+    <!-- Iconos -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/png" href="icons/icon-32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="icons/icon-16.png" sizes="16x16" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#141518" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Conecta7 Admin" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- Fuente -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Datos estructurados para Google -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Conecta 7 · Administrador",
+        "url": "https://app.umch.org.mx/admin/",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "es-MX",
+        "image": "https://app.umch.org.mx/admin/og-image.png",
+        "description": "Panel de administración de Conecta7 para la gestión de recursos, eventos eclesiásticos y ministerios locales de la Unión Mexicana de Chiapas.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Unión Mexicana de Chiapas",
+          "url": "https://app.umch.org.mx/",
+          "logo": "https://app.umch.org.mx/admin/icons/icon-512.png"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <app-root></app-root>
+    <noscript>Activa JavaScript para usar el panel de administración de Conecta 7.</noscript>
+  </body>
 </html>

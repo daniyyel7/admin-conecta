@@ -1,0 +1,41 @@
+/* Piezas visuales de la sección de recursos. */
+@layer components {
+  /* Opción del selector de tipo de recurso */
+  .type-option {
+    @apply flex items-center gap-2.5 rounded-xl border border-line bg-field/50 p-2.5 text-left transition hover:border-line-strong focus-visible:outline-2 focus-visible:outline-accent;
+  }
+  .type-option[aria-checked='true'] {
+    @apply border-accent/70 bg-accent/10;
+  }
+
+  /* Segmentado pequeño (p. ej. "Subir archivo / YouTube") */
+  .seg {
+    @apply rounded-md px-2.5 py-1.5 font-medium whitespace-nowrap text-muted transition hover:text-fg focus-visible:outline-2 focus-visible:outline-accent;
+  }
+  .seg[aria-checked='true'] {
+    @apply bg-surface text-fg shadow-sm shadow-shade/30;
+  }
+
+  /* Zona para soltar archivos */
+  .dropzone {
+    @apply flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line-strong bg-field/40 px-4 py-8 text-center transition hover:border-accent/50 hover:bg-accent/5 focus-within:border-accent/60;
+  }
+  .dropzone.is-drag {
+    @apply border-accent bg-accent/10;
+  }
+  .dropzone.is-invalid {
+    @apply border-danger/75;
+  }
+
+  /* Chips de departamento con desplazamiento horizontal (como en la app) */
+  .chip-scroll {
+    @apply -mx-1 flex gap-2 overflow-x-auto px-1 pb-1;
+    scrollbar-width: none;
+  }
+  .chip {
+    @apply inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-line bg-field px-3 text-xs font-medium whitespace-nowrap text-fg-2 transition hover:text-fg focus-visible:outline-2 focus-visible:outline-accent;
+  }
+  .chip[aria-pressed='true'] {
+    @apply border-accent/60 bg-accent/15 text-accent-fg;
+  }
+}

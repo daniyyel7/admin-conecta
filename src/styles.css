@@ -1,3 +1,117 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import 'tailwindcss';
+@import './styles/auth.css';
+@import './styles/eventos.css';
+@import './styles/forms.css';
+@import './styles/recursos.css';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * Tokens de color semánticos. Úsalos siempre en lugar de colores fijos:
+ *   bg-bg, bg-surface, bg-field, bg-chip, text-fg, text-fg-2, text-muted, text-subtle,
+ *   border-line, border-line-strong, bg-hover, bg-scrim, text-accent-fg, bg-accent, text-danger...
+ * El valor real cambia según <html data-theme="dark|light"> (ver core/theme).
+ */
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-header: var(--c-header);
+  --color-surface: var(--c-surface);
+  --color-field: var(--c-field);
+  --color-chip: var(--c-chip);
+  --color-chip-2: var(--c-chip-2);
+  --color-fg: var(--c-fg);
+  --color-fg-2: var(--c-fg-2);
+  --color-muted: var(--c-muted);
+  --color-subtle: var(--c-subtle);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-hover: var(--c-hover);
+  --color-scrim: var(--c-scrim);
+  --color-shade: var(--c-shade);
+  --color-accent: var(--c-accent);
+  --color-accent-fg: var(--c-accent-fg);
+  --color-on-accent: var(--c-on-accent);
+  --color-danger: var(--c-danger);
+  --color-success: var(--c-success);
+  /* Rojo sólido para botones destructivos (texto blanco encima) */
+  --color-danger-solid: #dc2626;
+}
+
+/* Oscuro (diseño original) — también es el valor por defecto */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --c-bg: #141518;
+  --c-header: #151619;
+  --c-surface: #1c1d21;
+  --c-field: #222327;
+  --c-chip: rgb(255 255 255 / 0.07);
+  --c-chip-2: rgb(0 0 0 / 0.4);
+  --c-fg: #f5f5f5;
+  --c-fg-2: #d4d4d4;
+  --c-muted: #a3a3a3;
+  --c-subtle: #737373;
+  --c-line: rgb(255 255 255 / 0.05);
+  --c-line-strong: rgb(255 255 255 / 0.1);
+  --c-hover: rgb(255 255 255 / 0.05);
+  --c-scrim: rgb(0 0 0 / 0.6);
+  --c-shade: #000;
+  --c-accent: #f39c1f;
+  --c-accent-fg: #f39c1f;
+  --c-on-accent: #1b1206;
+  --c-danger: #f87171;
+  --c-success: #34d399;
+  /* Intensidad del brillo naranja de tarjetas y botones */
+  --c-glow: 0.35;
+  --c-hero: linear-gradient(90deg, #212226 0%, #222327 45%, #2a2420 75%, #2b231d 100%);
+}
+
+/* Claro */
+[data-theme='light'] {
+  color-scheme: light;
+  --c-bg: #f4f4f5;
+  --c-header: #ffffff;
+  --c-surface: #ffffff;
+  --c-field: #f1f1f3;
+  --c-chip: rgb(0 0 0 / 0.05);
+  --c-chip-2: rgb(255 255 255 / 0.8);
+  --c-fg: #18181b;
+  --c-fg-2: #3f3f46;
+  --c-muted: #5f5f68;
+  --c-subtle: #8b8b94;
+  --c-line: rgb(0 0 0 / 0.07);
+  --c-line-strong: rgb(0 0 0 / 0.12);
+  --c-hover: rgb(0 0 0 / 0.04);
+  --c-scrim: rgb(24 24 27 / 0.35);
+  --c-shade: rgb(24 24 27 / 0.18);
+  --c-accent: #f39c1f;
+  /* Naranja más oscuro para texto: contraste AA sobre blanco */
+  --c-accent-fg: #b45309;
+  --c-on-accent: #1b1206;
+  --c-danger: #dc2626;
+  --c-success: #047857;
+  --c-glow: 0.18;
+  --c-hero: linear-gradient(90deg, #ffffff 0%, #ffffff 45%, #fdf3e7 75%, #fbead6 100%);
+}
+
+html {
+  background: var(--c-bg);
+}
+
+body {
+  @apply bg-bg font-sans text-fg antialiased;
+}
+
+/* Transición suave al cambiar de tema (solo colores, sin afectar animaciones). */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    fill 200ms ease !important;
+}

@@ -1,0 +1,139 @@
+<a routerLink="/recursos" class="inline-flex items-center gap-1.5 rounded text-sm text-muted transition hover:text-fg focus-visible:outline-2 focus-visible:outline-accent">
+  <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6" /></svg>
+  Recursos
+</a>
+
+@if (notFound()) {
+  <div class="card mt-4 px-6 py-14 text-center">
+    <p class="text-sm font-semibold text-fg">No encontramos esta colección</p>
+    <p class="mt-1 text-xs text-muted">Puede que se haya eliminado.</p>
+    <a routerLink="/recursos" class="btn-soft mt-4 h-9 text-xs">Volver a recursos</a>
+  </div>
+} @else if (coleccion(); as c) {
+  <!-- Encabezado de la colección -->
+  <section class="card mt-3 p-5 md:p-6" aria-labelledby="col-title">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 id="col-title" class="text-2xl font-bold tracking-tight text-fg">{{ c.title }}</h1>
+        <p class="mt-1 max-w-2xl text-sm text-muted">{{ c.description }}</p>
+      </div>
+      <div class="flex shrink-0 gap-2">
+        <button type="button" class="btn-soft" (click)="editCollectionOpen.set(true)">
+          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16Z" /><path d="m13.5 6.5 4 4" /></svg>
+          <span class="hidden sm:inline">Editar colección</span>
+          <span class="sm:hidden">Editar</span>
+        </button>
+        <button type="button" class="btn-accent" (click)="openAdd()">
+          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          Agregar recurso
+        </button>
+      </div>
+    </div>
+    <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-chip px-2 py-1 font-medium text-fg-2">
+        <span class="size-2 rounded-full" [style.background]="departamentoPorNombre(c.apartment).color" aria-hidden="true"></span>
+        {{ c.apartment }}
+      </span>
+      <span class="rounded-md bg-chip px-2 py-1 text-fg-2">{{ c.category }}</span>
+      <span class="badge-estado" [class]="statusClass(c.status)">{{ c.status }}</span>
+      <span class="rounded-md px-2 py-1 font-medium" [class]="c.visible ? 'bg-success/10 text-success' : 'bg-chip text-muted'">{{ c.visible ? 'Visible en la app' : 'Oculta en la app' }}</span>
+      <span class="text-muted">{{ formatFecha(c.date) }} · {{ c.location }}</span>
+    </div>
+  </section>
+
+  <!-- Recursos -->
+  <section class="card mt-4" aria-labelledby="recursos-title">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
+      <h2 id="recursos-title" class="text-sm font-semibold text-fg">
+        Recursos <span class="font-normal text-muted">({{ c.resources.length }})</span>
+      </h2>
+      @if (tipos().length > 1) {
+        <div class="chip-scroll" role="group" aria-label="Filtrar por tipo">
+          <button type="button" class="chip" [attr.aria-pressed]="tipo() === null" (click)="tipo.set(null)">Todos</button>
+          @for (t of tipos(); track t.cfg.type) {
+            <button type="button" class="chip" [attr.aria-pressed]="tipo() === t.cfg.type" (click)="tipo.set(tipo() === t.cfg.type ? null : t.cfg.type)">
+              <span class="size-2 rounded-full" [style.background]="t.cfg.color" aria-hidden="true"></span>
+              {{ t.cfg.label }} ({{ t.count }})
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <ul class="divide-y divide-line">
+      @for (r of recursos(); track r.id) {
+        <li class="flex flex-wrap items-center gap-3 px-5 py-3.5 sm:flex-nowrap" [class.opacity-70]="!r.visible">
+          <span class="type-icon size-11" [style.--type]="typeConfig(r.type).color" aria-hidden="true">
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              @for (d of typeConfig(r.type).icon; track $index) { <path [attr.d]="d" /> }
+            </svg>
+          </span>
+          <div class="min-w-0 flex-1 basis-40">
+            <p class="truncate text-sm font-semibold text-fg">{{ r.title }}</p>
+            <p class="truncate text-xs text-muted">{{ r.description }}</p>
+            <p class="mt-0.5 text-[11px] font-medium" [style.color]="typeConfig(r.type).color">{{ typeConfig(r.type).label }}</p>
+          </div>
+
+          <div class="ml-auto flex items-center gap-2">
+            <label class="mr-1 flex items-center gap-2 text-[11px] text-muted">
+              <span class="hidden md:inline">{{ r.visible ? 'Visible' : 'Oculto' }}</span>
+              <button type="button" role="switch" class="switch switch-sm" [attr.aria-checked]="r.visible" [attr.aria-label]="'Visible en la app: ' + r.title" [disabled]="togglingId() === r.id" (click)="toggleVisible(r)"></button>
+            </label>
+            @if (isExternal(r.link)) {
+              <a class="icon-action" [href]="r.link" target="_blank" rel="noopener noreferrer" [attr.aria-label]="'Abrir ' + r.title + ' en otra pestaña'" title="Abrir">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+              </a>
+            }
+            <button type="button" class="icon-action" (click)="openEdit(r)" [attr.aria-label]="'Editar ' + r.title" title="Editar">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16Z" /><path d="m13.5 6.5 4 4" /></svg>
+            </button>
+            <button type="button" class="icon-action text-danger hover:text-danger" (click)="toDelete.set(r)" [attr.aria-label]="'Eliminar ' + r.title" title="Eliminar">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+            </button>
+          </div>
+        </li>
+      } @empty {
+        <li class="px-6 py-14 text-center">
+          <div class="mx-auto grid size-12 place-items-center rounded-full bg-accent/15 text-accent-fg">
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
+          </div>
+          <p class="mt-3 text-sm font-semibold text-fg">Esta colección aún no tiene recursos</p>
+          <p class="mt-1 text-xs text-muted">Sube PDF, documentos, audios, videos, imágenes o agrega enlaces de Drive.</p>
+          <button type="button" class="btn-accent mt-4" (click)="openAdd()">Agregar recurso</button>
+        </li>
+      }
+    </ul>
+  </section>
+
+  @if (resourceFormOpen()) {
+    <app-recurso-form-dialog [coleccionId]="c.id" [recurso]="editingResource()" (closed)="resourceFormOpen.set(false)" (saved)="onResourceSaved($event)" />
+  }
+  @if (editCollectionOpen()) {
+    <app-coleccion-form-dialog [coleccion]="c" (closed)="editCollectionOpen.set(false)" (saved)="onCollectionSaved($event)" />
+  }
+} @else {
+  <div class="card mt-4 space-y-4 p-6" aria-busy="true">
+    <span class="skeleton block h-7 w-1/3"></span>
+    <span class="skeleton block h-4 w-1/2"></span>
+    <span class="skeleton block h-14 w-full"></span>
+    <span class="skeleton block h-14 w-full"></span>
+  </div>
+}
+
+@if (toDelete(); as r) {
+  <app-confirm-dialog
+    title="¿Eliminar recurso?"
+    [message]="'Se eliminará “' + r.title + '” de la colección. Esta acción no se puede deshacer.'"
+    confirmLabel="Eliminar"
+    [danger]="true"
+    [busy]="deleting()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="toDelete.set(null)"
+  />
+}
+
+<div class="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" role="status" aria-live="polite">
+  @if (toast(); as message) {
+    <p class="pointer-events-auto rounded-xl border border-line-strong bg-surface px-4 py-3 text-sm text-fg shadow-xl shadow-shade/40">{{ message }}</p>
+  }
+</div>

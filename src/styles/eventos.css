@@ -1,0 +1,80 @@
+/* Piezas visuales compartidas por la pantalla de eventos (filtros, popovers, casillas). */
+@layer components {
+  .filter-btn {
+    @apply inline-flex h-9 items-center gap-2 rounded-lg border border-transparent bg-field px-3 text-sm whitespace-nowrap text-fg-2 transition hover:text-fg focus-visible:outline-2 focus-visible:outline-accent;
+  }
+  [data-theme='light'] .filter-btn {
+    @apply border-line;
+  }
+  .filter-btn.is-active {
+    @apply border-accent/40;
+  }
+
+  .popover {
+    @apply overflow-hidden rounded-xl border border-line-strong bg-surface shadow-2xl shadow-shade/50;
+  }
+
+  .check {
+    @apply size-4 shrink-0 cursor-pointer rounded;
+    accent-color: var(--c-accent);
+  }
+
+  .icon-action {
+    @apply grid size-8 place-items-center rounded-lg bg-chip text-fg-2 transition hover:bg-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-accent;
+  }
+  [data-theme='light'] .icon-action {
+    @apply border border-line bg-surface;
+  }
+
+  .badge-estado {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap;
+  }
+  .badge-estado::before {
+    content: '';
+    @apply size-1.5 rounded-full bg-current;
+  }
+  .badge-estado.en-curso {
+    @apply bg-success/12 text-success;
+  }
+  .badge-estado.proximo {
+    @apply bg-accent/15 text-accent-fg;
+  }
+  .badge-estado.finalizado {
+    @apply bg-chip text-subtle;
+  }
+  .badge-estado.cancelado {
+    @apply bg-danger/10 text-danger;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+  [data-theme='dark'] .card,
+  :root:not([data-theme]) .card {
+    background: color-mix(in srgb, var(--c-surface) 80%, var(--c-bg));
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-md bg-chip;
+  }
+
+  .thumb {
+    background:
+      radial-gradient(circle at 30% 20%, rgb(255 255 255 / 0.25), transparent 55%),
+      linear-gradient(135deg, var(--thumb), color-mix(in srgb, var(--thumb) 45%, #1b1206));
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+  }
+
+  .menu-item {
+    @apply flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-fg-2 transition hover:bg-hover hover:text-fg focus-visible:bg-hover focus-visible:outline-none;
+  }
+
+  .page-btn {
+    @apply grid h-8 min-w-8 place-items-center rounded-lg bg-chip px-2 text-sm font-medium text-fg-2 transition hover:text-fg focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .page-btn.is-current {
+    @apply bg-accent font-bold text-on-accent;
+  }
+}

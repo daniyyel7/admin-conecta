@@ -1,0 +1,199 @@
+<app-modal
+  [title]="recurso() ? 'Editar recurso' : 'Agregar recurso'"
+  [subtitle]="recurso() ? '' : 'Elige el tipo y sube el archivo o pega el enlace.'"
+  size="lg"
+  [busy]="saving()"
+  (closed)="closed.emit()"
+>
+  <form id="recurso-form" [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-6">
+    <!-- 1. Tipo -->
+    <fieldset>
+      <legend class="form-label">Tipo de recurso <span class="text-danger">*</span></legend>
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Tipo de recurso">
+        @for (t of types; track t.type) {
+          <button
+            type="button"
+            role="radio"
+            class="type-option"
+            [attr.aria-checked]="form.controls.type.value === t.type"
+            [attr.aria-invalid]="showError('type') && $first ? true : null"
+            (click)="selectType(t.type)"
+          >
+            <span class="type-icon size-9" [style.--type]="t.color" aria-hidden="true">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                @for (d of t.icon; track $index) { <path [attr.d]="d" /> }
+              </svg>
+            </span>
+            <span class="min-w-0 text-left">
+              <span class="block text-sm font-medium text-fg">{{ t.label }}</span>
+              <span class="block truncate text-[11px] text-muted">{{ t.hint }}</span>
+            </span>
+          </button>
+        }
+      </div>
+      @if (showError('type')) {
+        <p class="form-error">Elige qué tipo de recurso vas a agregar.</p>
+      }
+    </fieldset>
+
+    @if (config(); as cfg) {
+      <!-- 2. Contenido -->
+      <section aria-labelledby="fuente-title">
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h3 id="fuente-title" class="form-label mb-0">
+            {{ effectiveSource() === 'url' ? 'Enlace' : 'Archivo' }} <span class="text-danger">*</span>
+          </h3>
+          @if (cfg.mode === 'file-or-url') {
+            <div class="grid grid-cols-2 gap-1 rounded-lg bg-chip p-1 text-xs" role="radiogroup" aria-label="Origen del video">
+              <button type="button" role="radio" class="seg" [attr.aria-checked]="source() === 'file'" (click)="setSource('file')">Subir archivo</button>
+              <button type="button" role="radio" class="seg" [attr.aria-checked]="source() === 'url'" (click)="setSource('url')">YouTube / Vimeo</button>
+            </div>
+          }
+        </div>
+
+        @if (effectiveSource() === 'url') {
+          <input
+            id="recurso-link"
+            type="url"
+            inputmode="url"
+            formControlName="link"
+            class="field"
+            [placeholder]="cfg.urlPlaceholder ?? 'https://'"
+            [attr.aria-invalid]="showError('link')"
+            aria-describedby="recurso-link-help"
+          />
+          @if (showError('link')) {
+            <p class="form-error">
+              {{ form.controls.link.hasError('required') ? 'Pega el enlace.' : 'El enlace no es válido para ' + cfg.label + '.' }}
+            </p>
+          }
+          @if (cfg.urlHelp) {
+            <p id="recurso-link-help" class="form-help">{{ cfg.urlHelp }}</p>
+          }
+        } @else {
+          @if (fileName() && (uploading() || form.controls.link.value)) {
+            <!-- Archivo elegido / subiendo -->
+            <div class="rounded-xl border border-line bg-field/60 p-3">
+              <div class="flex items-center gap-3">
+                <span class="type-icon size-10" [style.--type]="cfg.color" aria-hidden="true">
+                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    @for (d of cfg.icon; track $index) { <path [attr.d]="d" /> }
+                  </svg>
+                </span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-medium text-fg" [title]="fileName()">{{ fileName() }}</p>
+                  <p class="text-xs text-muted">
+                    @if (uploading()) {
+                      Subiendo… {{ progress() }}%
+                    } @else {
+                      {{ fileSize() !== null ? formatSize(fileSize()) + ' · ' : '' }}Listo
+                    }
+                  </p>
+                </div>
+                @if (uploading()) {
+                  <button type="button" class="btn-ghost h-8 px-3 text-xs" (click)="cancelUpload()">Cancelar</button>
+                } @else {
+                  <label class="btn-soft h-8 cursor-pointer px-3 text-xs focus-within:outline-2 focus-within:outline-accent">
+                    Cambiar
+                    <input type="file" class="sr-only" [accept]="cfg.accept" (change)="onFileInput($any($event.target))" />
+                  </label>
+                  <button type="button" class="grid size-8 place-items-center rounded-lg text-danger transition hover:bg-danger/10" (click)="removeFile()" aria-label="Quitar archivo">
+                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                  </button>
+                }
+              </div>
+              @if (uploading()) {
+                <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-chip" role="progressbar" [attr.aria-valuenow]="progress()" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso de la subida">
+                  <div class="h-full rounded-full bg-accent transition-[width] duration-150" [style.width.%]="progress()"></div>
+                </div>
+              }
+              @if (!uploading() && previewUrl()) {
+                @switch (cfg.type) {
+                  @case ('image') {
+                    <img [src]="previewUrl()" alt="Vista previa" class="mt-3 max-h-48 w-full rounded-lg object-contain" />
+                  }
+                  @case ('audio') {
+                    <audio [src]="previewUrl()" controls preload="none" class="mt-3 w-full"></audio>
+                  }
+                  @case ('video') {
+                    <video [src]="previewUrl()" controls preload="metadata" class="mt-3 max-h-56 w-full rounded-lg bg-black"></video>
+                  }
+                }
+              }
+            </div>
+          } @else {
+            <!-- Zona para soltar / elegir -->
+            <label
+              class="dropzone"
+              [class.is-drag]="dragOver()"
+              [class.is-invalid]="showError('link') || fileError()"
+              (dragover)="onDragOver($event)"
+              (dragleave)="dragOver.set(false)"
+              (drop)="onDrop($event)"
+            >
+              <span class="type-icon size-11" [style.--type]="cfg.color" aria-hidden="true">
+                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
+              </span>
+              <span class="text-sm font-medium text-fg">Arrastra el archivo aquí o <span class="text-accent-fg underline underline-offset-2">elígelo</span></span>
+              <span class="text-[11px] text-muted">{{ cfg.formats }} · máx. {{ cfg.maxMb }} MB</span>
+              <input
+                id="recurso-file"
+                type="file"
+                class="sr-only"
+                [accept]="cfg.accept"
+                (change)="onFileInput($any($event.target))"
+                [attr.aria-invalid]="showError('link')"
+              />
+            </label>
+          }
+          @if (fileError(); as error) {
+            <p role="alert" class="form-error">{{ error }}</p>
+          } @else if (showError('link') && !uploading()) {
+            <p class="form-error">Sube el archivo.</p>
+          }
+        }
+      </section>
+
+      <!-- 3. Datos -->
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label for="recurso-title" class="form-label">Título <span class="text-danger">*</span></label>
+          <input id="recurso-title" formControlName="title" maxlength="80" class="field" placeholder="Ej. Revive 2026" [attr.aria-invalid]="showError('title')" />
+          @if (showError('title')) {
+            <p class="form-error">Escribe el título del recurso.</p>
+          }
+        </div>
+        <div class="sm:col-span-2">
+          <label for="recurso-description" class="form-label">Descripción <span class="text-danger">*</span></label>
+          <input id="recurso-description" formControlName="description" maxlength="160" class="field" placeholder="Ej. Guía de programas" [attr.aria-invalid]="showError('description')" />
+          @if (showError('description')) {
+            <p class="form-error">Escribe una descripción corta.</p>
+          } @else {
+            <p class="form-help">Se muestra debajo del título en la app.</p>
+          }
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-4 rounded-xl border border-line bg-field/50 px-4 py-3">
+        <div>
+          <p class="text-sm font-medium text-fg">Visible en la app</p>
+          <p class="text-xs text-muted">Puedes subirlo oculto y mostrarlo después.</p>
+        </div>
+        <button type="button" role="switch" class="switch" [attr.aria-checked]="form.controls.visible.value" aria-label="Visible en la app" (click)="toggleVisible()"></button>
+      </div>
+    }
+  </form>
+
+  <div modal-footer>
+    <button type="button" class="btn-ghost" (click)="closed.emit()" [disabled]="saving()">Cancelar</button>
+    <button type="submit" form="recurso-form" class="btn-accent min-w-32" [disabled]="saving() || uploading()">
+      @if (uploading()) {
+        Subiendo… {{ progress() }}%
+      } @else if (saving()) {
+        Guardando…
+      } @else {
+        {{ recurso() ? 'Guardar cambios' : 'Agregar recurso' }}
+      }
+    </button>
+  </div>
+</app-modal>

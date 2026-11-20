@@ -9,6 +9,16 @@ import { join } from 'node:path';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
+/** true cuando se ejecuta `node dist/.../server.mjs` (producción); false dentro de `ng serve`. */
+const isStandaloneServer = isMainModule(import.meta.url) || !!process.env['pm_id'];
+
+/**
+ * Ruta pública del panel. Debe coincidir con `baseHref` de la configuración `production` en angular.json.
+ * Se puede sobrescribir con la variable de entorno BASE_PATH (sin barra final, p. ej. "/admin").
+ * En `ng serve` la app vive en la raíz, así que ahí no se aplica.
+ */
+const basePath = isStandaloneServer ? (process.env['BASE_PATH'] ?? '/admin') : '';
+
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
@@ -28,12 +38,18 @@ const angularApp = new AngularNodeAppEngine();
  * Serve static files from /browser
  */
 app.use(
+  basePath || '/',
   express.static(browserDistFolder, {
     maxAge: '1y',
     index: false,
     redirect: false,
   }),
 );
+
+/** La raíz del dominio en este servidor redirige al panel. */
+if (basePath) {
+  app.get('/', (_req, res) => res.redirect(301, `${basePath}/`));
+}
 
 /**
  * Handle all other requests by rendering the Angular application.
