@@ -22,7 +22,8 @@ Hoy todo está simulado en el frontend; cada endpoint indica qué pantalla lo us
 | Departamentos / categorías | `departamentoId` y `categoriaId` son el slug (`"juvenil"`). En colecciones, `apartment` y `category` aceptan el nombre o el slug. |
 | Eventos | Aceptan `categoriaId` opcional (lo que la app recibe en `category`). La respuesta incluye `visible` y `motivoCancelacion`. |
 | Eliminar | **Borrado lógico** en todo: el registro se marca como eliminado y deja de salir en la app y en el panel. **Los archivos no se borran** del servidor. |
-| `POST /archivos` | Los datos van en la **URL**, no en el formulario: `/archivos?destino=evento-portada` o `/archivos?destino=recurso&tipo=pdf&coleccion=1`. El archivo va en el campo `file`. Se guarda en `/media/publico/<tipo>/<carpeta de la colección>/` (portadas en `imagenes/eventos/`). |
+| `POST /archivos` | Los datos van en la **URL**, no en el formulario: `/archivos?destino=evento-portada`, `/archivos?destino=recurso&tipo=pdf&coleccion=1` o `/archivos?destino=recurso-portada&coleccion=1`. El archivo va en el campo `file`. Se guarda en `/media/publico/<tipo>/<carpeta de la colección>/` (portadas de eventos en `imagenes/eventos/`; portadas de recursos en `imagenes/<carpeta de la colección>/`). |
+| Portada de recursos | Cada recurso lleva `image` (también en `/home/resources`). Es opcional: si no se sube, la API guarda en `recursos.portada` la ruta por defecto del catálogo (`tipos_recurso.portada_default`, hoy `imagenes/_predeterminadas/recurso.png`), así que `image` nunca llega vacío. En el panel llega además `customImage` (`true` si tiene portada propia). |
 | Límites de subida | Salen de la tabla `tipos_recurso` (`GET /catalogos/tipos-recurso`): PDF y documentos 50 MB, imagen 10 MB (también portadas), audio 200 MB, video 2 GB. |
 | Recursos con archivo | `link` debe ser la URL que regresó `/archivos` y el archivo debe existir; si no, `400` con `errors.link`. |
 
@@ -279,8 +280,9 @@ Usado en: imagen de portada del evento y recursos de tipo PDF, Documento, Video,
 | Campo | Ejemplo | Descripción |
 |---|---|---|
 | `file` | (archivo) | El archivo |
-| `destino` | `evento-portada` \| `recurso` | Para guardarlo en la carpeta correcta y aplicar sus límites |
+| `destino` | `evento-portada` \| `recurso` \| `recurso-portada` | Para guardarlo en la carpeta correcta y aplicar sus límites |
 | `tipo` | `pdf` | Solo cuando `destino = recurso`: tipo de recurso, para validar formato y tamaño |
+| `coleccion` | `1` | Con `destino = recurso` o `recurso-portada`: id de la colección (define la carpeta) |
 
 ```json
 // 201
@@ -395,9 +397,13 @@ Responde `204`. Elimina también sus recursos y los archivos subidos de esos rec
   "date": "2026-11-01",
   "link": "https://app.umch.org.mx/media/publico/pdf/guia-lideres-2027.pdf",
   "title": "Guía para Líderes",
-  "description": "Grupos pequeños familiares"
+  "description": "Grupos pequeños familiares",
+  "image": "https://app.umch.org.mx/media/publico/imagenes/libros-umch-2026/portada-guia-3f9a.jpg",
+  "customImage": true
 }
 ```
+
+`image`: portada del recurso; si no tiene una propia, la por defecto (`customImage: false`). `customImage` solo llega al panel, no a la app.
 
 `type`: `pdf` | `document` | `video` | `audio` | `image` | `drive` | `link`.
 
@@ -409,10 +415,12 @@ Responde `204`. Elimina también sus recursos y los archivos subidos de esos rec
   "title": "Carpeta de especialidades",
   "description": "Requisitos y hojas de trabajo",
   "link": "https://drive.google.com/drive/folders/1EBW7-wf0l6JDsDibyQNKcCf0ZR_LoifM",
-  "visible": true
+  "visible": true,
+  "image": null
 }
 ```
 - `title`, `description` y `link` son obligatorios.
+- `image` es opcional: la URL de `POST /archivos?destino=recurso-portada&coleccion=:id`, o `null`/vacío para usar la portada por defecto.
 - `link` es la URL de `POST /archivos` (tipos con archivo) o el enlace escrito (Drive, Enlace, video de YouTube/Vimeo).
 - Validar en el servidor:
   - `drive`: `https://drive.google.com/...` o `https://docs.google.com/...`

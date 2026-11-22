@@ -39,7 +39,7 @@ describe('ColeccionesStore (contra la API falsa)', () => {
 
   it('el recurso hereda departamento, categoría, fecha y estado de su colección', async () => {
     const r = await firstValueFrom(
-      store.addResource('2', { type: 'link', title: 'Web', description: 'd', link: 'https://x.org', visible: true }),
+      store.addResource('2', { type: 'link', title: 'Web', description: 'd', link: 'https://x.org', visible: true, image: null }),
     );
     const col = store.getById('2')!;
     expect(r).toMatchObject({ apartment: col.apartment, category: col.category, date: col.date, status: col.status });

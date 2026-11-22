@@ -13,6 +13,8 @@ function recursos(base: Base, items: [ResourceType, string, string, string, bool
     link,
     title,
     description,
+    image: PORTADA_DEFAULT,
+    customImage: false,
   }));
 }
 
@@ -32,6 +34,9 @@ function coleccion(
 }
 
 const PDF = 'https://app.umch.org.mx/media/publico/pdf';
+
+/** Portada que manda la API cuando el recurso no tiene una propia. */
+export const PORTADA_DEFAULT = 'https://app.umch.org.mx/media/publico/imagenes/_predeterminadas/recurso.png';
 
 export const COLECCIONES_MOCK: Collection[] = [
   coleccion(

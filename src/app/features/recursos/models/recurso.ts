@@ -22,6 +22,10 @@ export interface Resource {
   link: string;
   title: string;
   description: string;
+  /** Portada que recibe la app: la propia o, si no subieron una, la por defecto del tipo. */
+  image: string;
+  /** true si el recurso tiene portada propia (no la por defecto). */
+  customImage?: boolean;
 }
 
 /** Colección de recursos (en la API: un elemento de `allEvents`). */
@@ -48,7 +52,10 @@ export type CollectionInput = Pick<
 >;
 
 /** Lo que el panel envía al crear/editar un recurso (status, category, apartment y date se heredan de la colección). */
-export type ResourceInput = Pick<Resource, 'type' | 'title' | 'description' | 'link' | 'visible'>;
+export type ResourceInput = Pick<Resource, 'type' | 'title' | 'description' | 'link' | 'visible'> & {
+  /** URL de la portada subida; `null` = sin portada propia (la app usa la por defecto). */
+  image: string | null;
+};
 
 /** Cómo se captura el contenido de cada tipo de recurso. */
 export type SourceMode = 'file' | 'url' | 'file-or-url';

@@ -13,7 +13,8 @@ export interface UploadProgress {
 /** Dónde se guarda el archivo (la API aplica los límites de cada tipo). */
 export type DestinoArchivo =
   | { destino: 'evento-portada' }
-  | { destino: 'recurso'; tipo: string; coleccion: string };
+  | { destino: 'recurso'; tipo: string; coleccion: string }
+  | { destino: 'recurso-portada'; coleccion: string };
 
 interface RespuestaSubida {
   url: string;

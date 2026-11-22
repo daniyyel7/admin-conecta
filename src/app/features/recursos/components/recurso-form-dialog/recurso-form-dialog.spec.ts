@@ -1,5 +1,7 @@
 import { proveerApiFalsa } from '../../../../../testing/api-falsa';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { PORTADA_DEFAULT } from '../../../../../testing/colecciones.mock';
+import { Resource } from '../../models/recurso';
 import { ColeccionesStore } from '../../services/colecciones-store';
 import { RecursoFormDialog, validarArchivo } from './recurso-form-dialog';
 
@@ -87,5 +89,46 @@ describe('RecursoFormDialog', () => {
     seg[1].click();
     await fixture.whenStable();
     expect(el.querySelector<HTMLInputElement>('#recurso-link')!.placeholder).toContain('youtube');
+  });
+
+  async function guardarDrive(): Promise<Resource> {
+    const guardado = new Promise<Resource>((ok) => fixture.componentInstance.saved.subscribe(ok));
+    escribir('#recurso-link', 'https://drive.google.com/drive/folders/abc');
+    escribir('#recurso-title', 'Carpeta');
+    escribir('#recurso-description', 'Material');
+    el.querySelector<HTMLButtonElement>('button[form=recurso-form]')!.click();
+    return guardado;
+  }
+
+  it('la portada es opcional: sin subirla se usa la por defecto', async () => {
+    await elegirTipo('Google Drive');
+    expect(el.textContent).toContain('la app muestra la portada por defecto');
+    const r = await guardarDrive();
+    expect(r.image).toBe(PORTADA_DEFAULT);
+    expect(r.customImage).toBe(false);
+  });
+
+  it('sube la portada a la carpeta de la colección y la guarda', async () => {
+    await elegirTipo('Google Drive');
+    const input = el.querySelector<HTMLInputElement>('#recurso-portada')!;
+    Object.defineProperty(input, 'files', { value: [new File(['x'], 'portada.png', { type: 'image/png' })] });
+    input.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 150));
+    await fixture.whenStable();
+    const img = el.querySelector<HTMLImageElement>('img[alt="Portada del recurso"]')!;
+    expect(img.src).toContain('/imagenes/col-1/portada.png');
+
+    const r = await guardarDrive();
+    expect(r.image).toContain('/imagenes/col-1/portada.png');
+    expect(r.customImage).toBe(true);
+  });
+
+  it('rechaza una portada que no es imagen', async () => {
+    await elegirTipo('Google Drive');
+    const input = el.querySelector<HTMLInputElement>('#recurso-portada')!;
+    Object.defineProperty(input, 'files', { value: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] });
+    input.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(el.textContent).toContain('La portada debe ser una imagen');
   });
 });

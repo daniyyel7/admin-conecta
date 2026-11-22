@@ -63,11 +63,15 @@
     <ul class="divide-y divide-line">
       @for (r of recursos(); track r.id) {
         <li class="flex flex-wrap items-center gap-3 px-5 py-3.5 sm:flex-nowrap" [class.opacity-70]="!r.visible">
-          <span class="type-icon size-11" [style.--type]="typeConfig(r.type).color" aria-hidden="true">
-            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              @for (d of typeConfig(r.type).icon; track $index) { <path [attr.d]="d" /> }
-            </svg>
-          </span>
+          @if (r.customImage) {
+            <img [src]="r.image" alt="" class="size-11 shrink-0 rounded-xl object-cover" loading="lazy" />
+          } @else {
+            <span class="type-icon size-11" [style.--type]="typeConfig(r.type).color" aria-hidden="true">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                @for (d of typeConfig(r.type).icon; track $index) { <path [attr.d]="d" /> }
+              </svg>
+            </span>
+          }
           <div class="min-w-0 flex-1 basis-40">
             <p class="truncate text-sm font-semibold text-fg">{{ r.title }}</p>
             <p class="truncate text-xs text-muted">{{ r.description }}</p>

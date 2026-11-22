@@ -1,0 +1,40 @@
+<section aria-labelledby="portada-title">
+  <h3 id="portada-title" class="form-label">
+    Imagen de portada <span class="font-normal text-muted">(opcional)</span>
+  </h3>
+  <div class="flex items-center gap-4 rounded-xl border border-line bg-field/50 p-3">
+    @if (url()) {
+      <img [src]="url()" alt="Portada del recurso" class="aspect-video w-32 shrink-0 rounded-lg object-cover sm:w-40" />
+    } @else {
+      <span class="grid aspect-video w-32 shrink-0 place-items-center rounded-lg border-2 border-dashed border-line-strong text-muted sm:w-40" aria-hidden="true">
+        <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" /></svg>
+      </span>
+    }
+    <div class="min-w-0 flex-1">
+      <p class="text-xs text-muted">
+        @if (uploading()) {
+          Subiendo imagen… {{ progress() }}%
+        } @else if (url()) {
+          Se mostrará en la app.
+        } @else {
+          Si no subes una, la app muestra la portada por defecto.
+        }
+      </p>
+      <p class="mt-0.5 text-[11px] text-subtle">JPG, PNG o WebP · máx. {{ maxMb() }} MB · 16:9</p>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <label class="btn-soft h-8 cursor-pointer px-3 text-xs focus-within:outline-2 focus-within:outline-accent">
+          {{ url() ? 'Cambiar' : 'Subir imagen' }}
+          <input id="recurso-portada" type="file" accept="image/*" class="sr-only" [disabled]="uploading()" (change)="onFile($any($event.target))" />
+        </label>
+        @if (url() || uploading()) {
+          <button type="button" class="btn-ghost h-8 px-3 text-xs text-danger" (click)="quitar()">
+            {{ uploading() ? 'Cancelar' : 'Quitar' }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+  @if (error(); as e) {
+    <p role="alert" class="form-error">{{ e }}</p>
+  }
+</section>

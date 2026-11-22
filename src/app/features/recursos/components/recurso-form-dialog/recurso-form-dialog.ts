@@ -23,6 +23,7 @@ import {
 } from '../../models/recurso';
 import { CatalogosStore } from '../../../../core/catalogos/catalogos-store';
 import { ColeccionesStore } from '../../services/colecciones-store';
+import { RecursoPortada } from '../recurso-portada/recurso-portada';
 
 type Source = 'file' | 'url';
 
@@ -32,7 +33,7 @@ type Source = 'file' | 'url';
  */
 @Component({
   selector: 'app-recurso-form-dialog',
-  imports: [ReactiveFormsModule, Modal],
+  imports: [ReactiveFormsModule, Modal, RecursoPortada],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './recurso-form-dialog.html',
 })
@@ -88,6 +89,10 @@ export class RecursoFormDialog implements OnInit {
   protected readonly dragOver = signal(false);
   private uploadSub?: Subscription;
 
+  /** Portada opcional (URL subida o ''); se sube en el componente hijo. */
+  protected readonly portada = signal('');
+  protected readonly subiendoPortada = signal(false);
+
   protected readonly saving = signal(false);
   protected readonly submitted = signal(false);
   protected readonly saveError = signal<string | null>(null);
@@ -115,6 +120,7 @@ export class RecursoFormDialog implements OnInit {
         link: r.link,
         visible: r.visible,
       });
+      this.portada.set(r.customImage ? r.image : '');
       const cfg = typeConfig(r.type);
       const esUrl = cfg.mode === 'url' || (cfg.mode === 'file-or-url' && !!cfg.urlPattern?.test(r.link));
       this.source.set(esUrl ? 'url' : 'file');
@@ -250,7 +256,7 @@ export class RecursoFormDialog implements OnInit {
 
   protected submit(): void {
     this.submitted.set(true);
-    if (this.uploading()) return;
+    if (this.uploading() || this.subiendoPortada()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       setTimeout(() =>
@@ -265,6 +271,7 @@ export class RecursoFormDialog implements OnInit {
       description: raw.description.trim(),
       link: raw.link.trim(),
       visible: raw.visible,
+      image: this.portada() || null,
     };
     const actual = this.recurso();
     const request = actual

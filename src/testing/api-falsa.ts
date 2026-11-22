@@ -13,7 +13,7 @@ import { ArchivosService, DestinoArchivo, UploadProgress } from '../app/core/api
 import { Evento, EventoInput } from '../app/features/eventos/models/evento';
 import { simularEstadoApi } from '../app/features/eventos/services/eventos-store';
 import { Collection, Resource, RESOURCE_TYPES, contarArchivos } from '../app/features/recursos/models/recurso';
-import { COLECCIONES_MOCK } from './colecciones.mock';
+import { COLECCIONES_MOCK, PORTADA_DEFAULT } from './colecciones.mock';
 import { EVENTOS_MOCK } from './eventos.mock';
 
 /** Departamentos de ejemplo (los mismos ids que usan los datos de prueba). */
@@ -171,8 +171,13 @@ export function crearApiFalsa() {
       const c = col(p[1]);
       if (!c) return falla(404, 'La colección no existe.');
       const heredado = { status: c.status, category: c.category, apartment: c.apartment, date: c.date };
+      // Como la API: sin portada propia se manda la por defecto.
+      const conPortada = (b: Record<string, unknown>) => {
+        const { image, ...resto } = b as unknown as Resource & { image: string | null };
+        return { ...resto, image: image || PORTADA_DEFAULT, customImage: !!image };
+      };
       if (!p[2] && m === 'POST') {
-        const r = { ...(body as unknown as Resource), ...heredado, id: siguienteId(c.resources.map((x) => x.id)) };
+        const r = { ...conPortada(body), ...heredado, id: siguienteId(c.resources.map((x) => x.id)) };
         c.resources.push(r);
         return ok(r, 201);
       }
@@ -184,7 +189,7 @@ export function crearApiFalsa() {
       }
       c.resources[i] = p[3]
         ? { ...c.resources[i], visible: Boolean(body['visible']) }
-        : { ...c.resources[i], ...(body as unknown as Resource), ...heredado };
+        : { ...c.resources[i], ...conPortada(body), ...heredado };
       return ok(c.resources[i]);
     }
 
@@ -197,7 +202,12 @@ export function crearApiFalsa() {
   /** Subida simulada: progreso en pasos y al final una URL de /media/publico. */
   const archivos: Pick<ArchivosService, 'subir'> = {
     subir: (file: File, destino: DestinoArchivo): Observable<UploadProgress> => {
-      const carpeta = destino.destino === 'recurso' ? `${destino.tipo}/col-${destino.coleccion}` : 'imagenes/eventos';
+      const carpeta =
+        destino.destino === 'recurso'
+          ? `${destino.tipo}/col-${destino.coleccion}`
+          : destino.destino === 'recurso-portada'
+            ? `imagenes/col-${destino.coleccion}`
+            : 'imagenes/eventos';
       return timer(0, 20).pipe(
         map((i) => Math.min(100, i * 25)),
         takeWhile((pr) => pr < 100, true),

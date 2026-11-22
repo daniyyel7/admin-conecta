@@ -130,6 +130,11 @@ export class ColeccionesStore {
     return this.archivos.subir(file, { destino: 'recurso', tipo, coleccion: coleccionId });
   }
 
+  /** Sube la portada de un recurso (imagenes/<colección>/); al terminar trae la `url`. */
+  uploadPortada(file: File, coleccionId: string): Observable<UploadProgress> {
+    return this.archivos.subir(file, { destino: 'recurso-portada', coleccion: coleccionId });
+  }
+
   // ---------- Internos ----------
 
   private setResources(collectionId: string, cambio: (list: Resource[]) => Resource[]): void {
