@@ -63,6 +63,10 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/recursos/recursos.routes').then((m) => m.RECURSOS_ROUTES),
       },
+      {
+        path: 'avisos',
+        loadChildren: () => import('./features/avisos/avisos.routes').then((m) => m.AVISOS_ROUTES),
+      },
     ],
   },
 

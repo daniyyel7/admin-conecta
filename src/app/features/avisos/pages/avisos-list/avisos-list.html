@@ -1,0 +1,296 @@
+<!-- Encabezado -->
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-fg">Avisos</h1>
+    <p class="mt-1 text-sm text-muted">Avisos generales que la app muestra a todos los miembros.</p>
+  </div>
+  <button type="button" class="btn-accent" (click)="openCreate()">
+    <svg
+      class="size-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+    Nuevo aviso
+  </button>
+</div>
+
+<!-- Indicadores -->
+<section aria-label="Resumen" class="mt-5 grid grid-cols-3 gap-3 md:gap-4">
+  @for (
+    stat of [
+      { label: 'Avisos', value: store.total() },
+      { label: 'Visibles en la app', value: store.visibles() },
+      { label: 'Importantes', value: store.importantes() },
+    ];
+    track stat.label
+  ) {
+    <div class="card p-4">
+      <p class="text-[11px] font-medium tracking-wide text-muted uppercase">{{ stat.label }}</p>
+      <p class="mt-1 text-2xl font-bold text-fg">
+        @if (store.loading()) {
+          <span class="skeleton inline-block h-7 w-8"></span>
+        } @else {
+          {{ stat.value }}
+        }
+      </p>
+    </div>
+  }
+</section>
+
+<!-- Búsqueda y filtros -->
+<section aria-label="Buscar y filtrar" class="card mt-4 p-4 md:p-5">
+  <label class="relative block">
+    <span class="sr-only">Buscar avisos</span>
+    <svg
+      class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+    <input
+      type="search"
+      class="h-11 w-full rounded-lg border border-transparent bg-field pr-4 pl-11 text-sm text-fg outline-none transition placeholder:text-subtle focus:border-accent/60 focus:ring-2 focus:ring-accent/20 [[data-theme=light]_&]:border-line"
+      placeholder="Buscar por título o mensaje..."
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </label>
+  <div class="chip-scroll mt-3" role="group" aria-label="Filtrar avisos">
+    @for (f of filtros; track f.id) {
+      <button
+        type="button"
+        class="chip"
+        [attr.aria-pressed]="filtro() === f.id"
+        (click)="filtro.set(f.id)"
+      >
+        {{ f.label }}
+      </button>
+    }
+  </div>
+</section>
+
+<!-- Lista -->
+<section aria-label="Avisos" class="mt-4">
+  @if (store.error(); as error) {
+    <div class="card p-10 text-center">
+      <p class="text-sm text-danger">{{ error }}</p>
+      <button
+        type="button"
+        class="mt-3 text-sm font-medium text-accent-fg hover:underline"
+        (click)="store.load(true)"
+      >
+        Reintentar
+      </button>
+    </div>
+  } @else if (store.loading()) {
+    <div class="space-y-3">
+      @for (i of skeletons; track i) {
+        <div class="card space-y-3 p-5">
+          <span class="skeleton block h-5 w-1/2"></span
+          ><span class="skeleton block h-4 w-full"></span
+          ><span class="skeleton block h-4 w-2/3"></span>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="mb-3 text-xs text-muted" aria-live="polite">
+      {{ filtered().length }} {{ filtered().length === 1 ? 'aviso' : 'avisos' }}
+      @if (hasFilters()) {
+        ·
+        <button
+          type="button"
+          class="font-medium text-accent-fg hover:underline"
+          (click)="clearFilters()"
+        >
+          Quitar filtros
+        </button>
+      }
+    </p>
+
+    <ul class="space-y-3">
+      @for (a of filtered(); track a.id) {
+        <li>
+          <article
+            class="card flex flex-col gap-3 p-5 sm:flex-row sm:items-start"
+            [class.opacity-75]="!a.visible"
+            [attr.aria-labelledby]="'aviso-' + a.id"
+          >
+            <span
+              class="grid size-10 shrink-0 place-items-center rounded-lg"
+              [class.bg-accent]="a.importante"
+              [class.text-on-accent]="a.importante"
+              [class.bg-chip]="!a.importante"
+              [class.text-fg-2]="!a.importante"
+              aria-hidden="true"
+            >
+              <svg
+                class="size-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+              </svg>
+            </span>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 [id]="'aviso-' + a.id" class="text-base font-semibold text-fg">
+                  {{ a.titulo }}
+                </h2>
+                @if (a.importante) {
+                  <span
+                    class="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-accent-fg"
+                    >Importante</span
+                  >
+                }
+                @if (!a.visible) {
+                  <span
+                    class="rounded-full border border-line-strong px-2 py-0.5 text-[11px] font-medium text-muted"
+                    >Oculto</span
+                  >
+                }
+              </div>
+              <p class="mt-1 text-sm whitespace-pre-line text-fg-2">{{ a.mensaje }}</p>
+              <p class="mt-2 text-[11px] text-subtle">
+                {{ formatFecha(a.fecha) }} · Icono: {{ etiquetaIcono(a.icono) }}
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2 sm:pl-2">
+              <label class="flex items-center gap-2 text-[11px] text-muted">
+                <span>Visible</span>
+                <button
+                  type="button"
+                  role="switch"
+                  class="switch switch-sm"
+                  [attr.aria-checked]="a.visible"
+                  [attr.aria-label]="'Visible en la app: ' + a.titulo"
+                  [disabled]="togglingId() === a.id"
+                  (click)="toggleVisible(a)"
+                ></button>
+              </label>
+              <button
+                type="button"
+                class="icon-action"
+                (click)="openEdit(a)"
+                [attr.aria-label]="'Editar aviso ' + a.titulo"
+                title="Editar aviso"
+              >
+                <svg
+                  class="size-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16Z" />
+                  <path d="m13.5 6.5 4 4" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="icon-action text-danger hover:text-danger"
+                (click)="toDelete.set(a)"
+                [attr.aria-label]="'Eliminar aviso ' + a.titulo"
+                title="Eliminar aviso"
+              >
+                <svg
+                  class="size-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"
+                  />
+                </svg>
+              </button>
+            </div>
+          </article>
+        </li>
+      } @empty {
+        <li class="card px-6 py-14 text-center">
+          <p class="text-sm font-semibold text-fg">
+            {{ hasFilters() ? 'No hay avisos que coincidan' : 'Aún no hay avisos' }}
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            {{
+              hasFilters()
+                ? 'Prueba con otra búsqueda o quita los filtros.'
+                : 'Publica el primero para que lo vean los miembros en la app.'
+            }}
+          </p>
+          @if (hasFilters()) {
+            <button type="button" class="btn-soft mt-4 h-9 text-xs" (click)="clearFilters()">
+              Quitar filtros
+            </button>
+          } @else {
+            <button type="button" class="btn-accent mt-4" (click)="openCreate()">
+              Nuevo aviso
+            </button>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
+
+@if (formOpen()) {
+  <app-aviso-form-dialog
+    [aviso]="editing()"
+    (closed)="formOpen.set(false)"
+    (saved)="onSaved($event)"
+  />
+}
+
+@if (toDelete(); as a) {
+  <app-confirm-dialog
+    title="¿Eliminar aviso?"
+    [message]="
+      'Se eliminará “' +
+      a.titulo +
+      '” y dejará de verse en la app. Esta acción no se puede deshacer.'
+    "
+    confirmLabel="Eliminar"
+    [danger]="true"
+    [busy]="deleting()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="toDelete.set(null)"
+  />
+}
+
+<div
+  class="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+  role="status"
+  aria-live="polite"
+>
+  @if (toast(); as message) {
+    <p
+      class="pointer-events-auto rounded-xl border border-line-strong bg-surface px-4 py-3 text-sm text-fg shadow-xl shadow-shade/40"
+    >
+      {{ message }}
+    </p>
+  }
+</div>

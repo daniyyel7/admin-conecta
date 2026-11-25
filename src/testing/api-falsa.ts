@@ -15,6 +15,8 @@ import { simularEstadoApi } from '../app/features/eventos/services/eventos-store
 import { Collection, Resource, RESOURCE_TYPES, contarArchivos } from '../app/features/recursos/models/recurso';
 import { COLECCIONES_MOCK, PORTADA_DEFAULT } from './colecciones.mock';
 import { EVENTOS_MOCK } from './eventos.mock';
+import { AVISOS_MOCK } from './avisos.mock';
+import { Aviso } from '../app/features/avisos/models/aviso';
 
 /** Departamentos de ejemplo (los mismos ids que usan los datos de prueba). */
 export const DEPARTAMENTOS_DEMO = [
@@ -49,6 +51,7 @@ export function crearApiFalsa() {
   const estado = {
     eventos: structuredClone(EVENTOS_MOCK) as Evento[],
     colecciones: structuredClone(COLECCIONES_MOCK) as Collection[],
+    avisos: structuredClone(AVISOS_MOCK) as Aviso[],
     sesion: false,
     /** Ids de los eventos elegidos para el Inicio, en orden. */
     inicio: [] as string[],
@@ -112,6 +115,26 @@ export function crearApiFalsa() {
       if (malo !== undefined) return falla(400, 'Ese evento no puede salir en el Inicio.', { ids: ['No válido.'] });
       estado.inicio = [...ids];
       return ok(elegidos());
+    }
+
+    // ── Avisos generales ──
+    if (ruta === '/avisos' && m === 'GET') return ok(structuredClone(estado.avisos));
+    if (ruta === '/avisos' && m === 'POST') {
+      const aviso = { ...(body as unknown as Aviso), id: siguienteId(estado.avisos.map((a) => a.id)) };
+      estado.avisos.unshift(aviso);
+      return ok(aviso, 201);
+    }
+    if ((p = ruta.match(/^\/avisos\/([^/]+)(\/visible)?$/))) {
+      const i = estado.avisos.findIndex((a) => a.id === p![1]);
+      if (i < 0) return falla(404, 'El aviso no existe.');
+      if (m === 'DELETE') {
+        estado.avisos.splice(i, 1);
+        return ok(null, 204);
+      }
+      estado.avisos[i] = p[2]
+        ? { ...estado.avisos[i], visible: Boolean(body['visible']) }
+        : { ...(body as unknown as Aviso), id: estado.avisos[i].id };
+      return ok(estado.avisos[i]);
     }
 
     // ── Eventos ──

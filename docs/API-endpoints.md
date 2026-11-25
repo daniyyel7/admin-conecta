@@ -443,12 +443,53 @@ Responde `204` y borra su archivo si fue subido.
 
 ---
 
+## 7. Avisos generales
+
+Se capturan en el panel (tabla `avisos_generales` en PostgreSQL) y la app los recibe en
+`GET /api-appumch/v1/avisos/generales`, con la **misma forma** que `GET /avisos` (que sigue saliendo de SQL Server, sin cambios):
+
+```json
+[{ "id": 7, "titulo": "Cambio de horario", "mensaje": "…", "fecha": "2026-08-12", "importante": true, "icon": "material-symbols:notifications" }]
+```
+
+La app solo recibe los visibles, ordenados por `fecha` (más recientes primero) y, el mismo día, los importantes antes.
+
+### Objeto `Aviso` (panel)
+
+```json
+{
+  "id": "7",
+  "titulo": "Cambio de horario",
+  "mensaje": "Revisa nuevamente la agenda…",
+  "fecha": "2026-08-12",
+  "importante": true,
+  "icono": "material-symbols:notifications",
+  "visible": true
+}
+```
+
+- `id`: el mismo número que recibe la app.
+- `titulo`: 3 a 120 caracteres. `mensaje`: 5 a 1000. `fecha`: `aaaa-mm-dd`.
+- `icono`: nombre de Iconify; si no se envía, `material-symbols:notifications`. `importante` y `visible` son opcionales (`false` y `true`).
+
+### 7.1 `GET /avisos` — Todos los avisos (también los ocultos)
+### 7.2 `GET /avisos/:id` — Un aviso
+### 7.3 `POST /avisos` — Crear aviso
+Cuerpo: el objeto sin `id`. Responde `201` con el aviso creado.
+### 7.4 `PUT /avisos/:id` — Editar aviso
+### 7.5 `PATCH /avisos/:id/visible` — Mostrar u ocultar en la app
+`{ "visible": false }`
+### 7.6 `DELETE /avisos/:id` — Eliminar aviso
+Borrado lógico. Responde `204`; `404` si no existe.
+
+---
+
 ## Resumen
 
 Pantallas del panel (ruta en producción bajo `https://app.umch.org.mx/admin`):
 **Login** (`/login`), **Recuperar contraseña** (`/recuperar-contrasena`), **Restablecer contraseña** (`/restablecer-contrasena`),
 **Inicio** (`/`), **Eventos** (`/eventos`), **Nuevo evento** (`/eventos/nuevo`), **Editar evento** (`/eventos/:id/editar`),
-**Recursos** (`/recursos`), **Colección** (`/recursos/:id`), y el **menú de perfil** / **menú lateral** que aparecen en todas las pantallas con sesión.
+**Recursos** (`/recursos`), **Colección** (`/recursos/:id`), **Avisos** (`/avisos`), y el **menú de perfil** / **menú lateral** que aparecen en todas las pantallas con sesión.
 
 | # | Método | Ruta | Para qué | Cómo se usa | Pantallas |
 |---|---|---|---|---|---|
@@ -482,6 +523,11 @@ Pantallas del panel (ruta en producción bajo `https://app.umch.org.mx/admin`):
 | 28 | PATCH | `/recursos/:id/resources/:resourceId/visible` | Mostrar/ocultar recurso | Al mover el interruptor **Visible** de un recurso (se guarda al instante). | Colección |
 | 29 | DELETE | `/recursos/:id/resources/:resourceId` | Eliminar recurso | Botón 🗑 de un recurso → confirmar **Eliminar**. | Colección |
 | 30 | PUT | `/recursos/:id/resources/orden` | Ordenar recursos *(a futuro)* | Todavía no se usa: sería al arrastrar los recursos para cambiar su orden. | Colección *(cuando se agregue)* |
+| 31 | GET | `/avisos` | Avisos generales | Al entrar a Avisos. Llena la lista, los indicadores (Avisos / Visibles / Importantes) y los filtros. | Avisos |
+| 32 | POST | `/avisos` | Crear aviso | Botón **Nuevo aviso** → llenar la ventana → **Publicar aviso**. | Avisos |
+| 33 | PUT | `/avisos/:id` | Editar aviso | Botón ✏️ de un aviso → **Guardar cambios**. | Avisos |
+| 34 | PATCH | `/avisos/:id/visible` | Mostrar/ocultar aviso | Al mover el interruptor **Visible** de un aviso (se guarda al instante). | Avisos |
+| 35 | DELETE | `/avisos/:id` | Eliminar aviso | Botón 🗑 de un aviso → confirmar **Eliminar**. | Avisos |
 
 ### Endpoints por pantalla
 
@@ -496,6 +542,7 @@ Pantallas del panel (ruta en producción bajo `https://app.umch.org.mx/admin`):
 | Editar evento | 9, 14, 16, 19 |
 | Recursos | 9, 10, 20, 22, 23, 24, 25 |
 | Colección | 10, 12, 19, 21, 23, 26, 27, 28, 29 |
+| Avisos | 31, 32, 33, 34, 35 |
 | Menú de perfil / menú lateral (todas las pantallas con sesión) | 2, 3, 4, 8 |
 
 ## Pendientes y observaciones para el backend
